@@ -2,9 +2,6 @@
 
 ![Project Banner](assets/banner.png)
 
-**Real-Time Stock Insights with AI**  
-This project combines real-time data, historical analysis, and AI-driven insights to empower investors and analysts. Explore the future of stock market analysis today!
-
 ---
 
 ## The Story Behind Real-Time Stock Market Analysis
