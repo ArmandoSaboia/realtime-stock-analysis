@@ -124,39 +124,39 @@ pip install -r requirements.txt
 ## Key Components
 
 ### Data Ingestion
-**Fetch real-time stock data using Alpha Vantage APIs.**
-**Stream data into Apache Kafka for real-time processing.**
+* Fetch real-time stock data using Alpha Vantage APIs.
+* Stream data into Apache Kafka for real-time processing.
 
 ### Data Storage & Processing
-**Store raw data in Delta Lake.**
-**Perform batch processing with Apache Spark.**
-**Use dbt for data transformation and modeling.**
+* Store raw data in Delta Lake.**
+* Perform batch processing with Apache Spark.
+* Use dbt for data transformation and modeling.
 
 ### Feature Engineering
-**Use Bytewax for real-time feature engineering.**
-**Use LangChain and LlamaIndex for generative AI-based insights.**
+* Use Bytewax for real-time feature engineering.
+* Use LangChain and LlamaIndex for generative AI-based insights.
 
 ### Model Training & Experiment Tracking
-**Train models using Scikit-learn or TensorFlow.**
-**Track experiments with MLflow.**
-**Register models in MLflow Registry.**
+* Train models using Scikit-learn or TensorFlow.
+* Track experiments with MLflow.
+* Register models in MLflow Registry.
 
 ### Pipeline Orchestration
-**Use Apache Airflow to orchestrate data pipelines.**
+* Use Apache Airflow to orchestrate data pipelines.
 
 ### Model Serving
-**Serve models using BentoML.**
+* Serve models using BentoML.
 
 ### API Development
-**Develop APIs using FastAPI for serving predictions.**
+* Develop APIs using FastAPI for serving predictions.**
 
 ### Visualization & Monitoring
-**Build dashboards with Streamlit and Grafana.**
-**Monitor metrics with Prometheus and visualize logs with the ELK Stack.**
+* Build dashboards with Streamlit and Grafana.
+* Monitor metrics with Prometheus and visualize logs with the ELK Stack.
 
 ### Generative AI User Interaction
-**Use LangChain to generate insights from unstructured data (e.g., news articles).**
-**Allow users to ask questions and receive AI-generated responses in the Streamlit dashboard.**
+* Use LangChain to generate insights from unstructured data (e.g., news articles).
+* Allow users to ask questions and receive AI-generated responses in the Streamlit dashboard.
 
 ---
 
@@ -167,9 +167,13 @@ This project was created by Armando Saboia, a passionate developer and data enth
 If you have any questions, suggestions, or would like to collaborate, feel free to reach out via the following channels:
 
 GitHub : https://github.com/ArmandoSaboia
+
 LinkedIn : https://www.linkedin.com/in/armandosaboia
+
 Email : armandosaboia.as@gmail.com
-Twitter : @armando_saboia
+
+X : https://x.com/home/armando_saboia
+
 Portfolio : https://armandosaboia.github.io
 
 ---
@@ -177,5 +181,5 @@ Portfolio : https://armandosaboia.github.io
 ## CI/CD Pipeline
 The project includes a GitHub Actions workflow for automated testing and deployment.
 
-##License
+## License
 This project is licensed under the MIT License.
