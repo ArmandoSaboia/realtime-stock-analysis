@@ -128,7 +128,7 @@ pip install -r requirements.txt
 * Stream data into Apache Kafka for real-time processing.
 
 ### Data Storage & Processing
-* Store raw data in Delta Lake.**
+* Store raw data in Delta Lake.
 * Perform batch processing with Apache Spark.
 * Use dbt for data transformation and modeling.
 
@@ -148,7 +148,7 @@ pip install -r requirements.txt
 * Serve models using BentoML.
 
 ### API Development
-* Develop APIs using FastAPI for serving predictions.**
+* Develop APIs using FastAPI for serving predictions.
 
 ### Visualization & Monitoring
 * Build dashboards with Streamlit and Grafana.
