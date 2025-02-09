@@ -1,10 +1,13 @@
 import requests
 from kafka import KafkaProducer
 import json
+from src.utils.helpers import load_secrets
 
 class AlphaVantageAPI:
-    def __init__(self, api_key):
-        self.api_key = api_key
+    def __init__(self):
+        # Load API key from secrets.yaml
+        secrets = load_secrets()
+        self.api_key = secrets.get("alpha_vantage_api_key")
         self.base_url = "https://www.alphavantage.co/query"
 
     def get_stock_data(self, symbol, interval="5min"):

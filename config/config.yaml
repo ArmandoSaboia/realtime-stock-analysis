@@ -1,6 +1,6 @@
 # Configuration file for the project
 alpha_vantage:
-  api_key: "YOUR_API_KEY"  # Replace with your Alpha Vantage API key
+  api_key: "REPLACE_WITH_ACTUAL_KEY"  # Placeholder; actual key comes from secrets.yaml or environment variable
 kafka:
   bootstrap_servers: "localhost:9092"
 spark:
