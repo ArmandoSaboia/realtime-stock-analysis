@@ -1,0 +1,9 @@
+# Configuration file for the project
+alpha_vantage:
+  api_key: "YOUR_API_KEY"  # Replace with your Alpha Vantage API key
+kafka:
+  bootstrap_servers: "localhost:9092"
+spark:
+  master: "local[*]"
+mlflow:
+  tracking_uri: "http://localhost:5000"
