@@ -1,0 +1,16 @@
+# Ignore Python cache files
+__pycache__/
+*.pyc
+
+# Ignore environment files
+.env
+secrets.yaml
+
+# Ignore data directories
+data/
+
+# Ignore virtual environments
+venv/
+
+# Ignore VSCode settings
+.vscode/
