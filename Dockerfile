@@ -6,16 +6,16 @@ RUN adduser --disabled-password --gecos "" appuser
 # Set working directory
 WORKDIR /app
 
-# Install dependencies as root
+# Install dependencies
 COPY requirements.txt .
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Switch to the non-root user
-USER appuser
-
 # Copy project files
 COPY . .
+
+# Switch to the non-root user
+USER appuser
 
 # Run the Streamlit app
 CMD ["streamlit", "run", "src/visualization/streamlit_dashboard.py"]

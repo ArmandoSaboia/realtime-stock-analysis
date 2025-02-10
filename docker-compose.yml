@@ -1,31 +1,35 @@
-version: '3'
+version: "3"
 services:
-  app:
-    build: .
+  zookeeper:
+    image: bitnami/zookeeper:latest
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
     ports:
-      - "8501:8501"
-    volumes:
-      - .:/app
-    working_dir: /app
-    command: streamlit run src/visualization/streamlit_dashboard.py
+      - "2181:2181"
 
   kafka:
     image: bitnami/kafka:latest
-    ports:
-      - "9092:9092"
-    environment:
-      - KAFKA_CFG_NODE_ID=0
-      - KAFKA_CFG_PROCESS_ROLES=controller,broker
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
-      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
-      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
     depends_on:
       - zookeeper
-
-  zookeeper:
-    image: bitnami/zookeeper:latest
-    ports:
-      - "2181:2181"
     environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
+      # Use ZooKeeper for coordination
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      # Allow plaintext connections (only for development)
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      # Set the container to run only as a broker to avoid controller-related errors
+      - KAFKA_CFG_PROCESS_ROLES=broker
+      # Define the broker listener on port 9092
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      # (Optional) Provide a dummy controller listener name so that if other parts of your image expect it, it's defined.
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=PLAINTEXT
+    ports:
+      - "9092:9092"
+
+  app:
+    build: . # Builds the image using the Dockerfile in the current (project) directory
+    depends_on:
+      - kafka
+      - zookeeper
+    ports:
+      - "8501:8501"
