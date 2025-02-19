@@ -4,7 +4,7 @@ __pycache__/
 
 # Ignore environment files
 .env
-secrets.yaml
+config/secrets.yaml
 
 # Ignore data directories
 data/

@@ -1,9 +1,15 @@
 # Configuration file for the project
+openai:
+  api_key: "${OPENAI_API_KEY}"  
+
 alpha_vantage:
-  api_key: "REPLACE_WITH_ACTUAL_KEY"  # Placeholder; actual key comes from secrets.yaml or environment variable
+  api_key: "${ALPHAVANTAGE_API_KEY}"  
+
 kafka:
   bootstrap_servers: "localhost:9092"
+
 spark:
   master: "local[*]"
+
 mlflow:
   tracking_uri: "http://localhost:5000"

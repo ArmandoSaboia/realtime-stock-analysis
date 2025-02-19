@@ -1,35 +1,81 @@
-version: "3"
+version: "3.8"
+
 services:
   zookeeper:
-    image: bitnami/zookeeper:latest
+    image: bitnami/zookeeper:3.7.0
+    container_name: realtime-stock-analysis-zookeeper
     environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
+      - ZOO_ENABLE_AUTH=yes
+      - ZOO_DIGEST_USER=super
+      - ZOO_DIGEST_PASSWORD_DIGEST=${ZOOKEEPER_DIGEST}
+      - ZOO_SERVERS=zookeeper:2888:3888
     ports:
       - "2181:2181"
+    networks:
+      - realtime-stock-analysis-network
+    healthcheck:
+      test: ["CMD", "sh", "-c", "echo stat | nc localhost 2181"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   kafka:
-    image: bitnami/kafka:latest
+    image: bitnami/kafka:2.8.1
+    container_name: realtime-stock-analysis-kafka
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_LISTENERS=SASL_PLAINTEXT://:9092
+      - KAFKA_ADVERTISED_LISTENERS=SASL_PLAINTEXT://kafka:9092
+      - KAFKA_DEFAULT_REPLICATION_FACTOR=3
+      - KAFKA_ZOOKEEPER_PROTOCOL=SASL
+      - KAFKA_ZOOKEEPER_USER=super
+      - KAFKA_ZOOKEEPER_PASSWORD=${KAFKA_PASSWORD}
+      - KAFKA_OPTS=-Djava.security.auth.login.config=/opt/bitnami/kafka/config/kafka_client_jaas.conf
+    volumes:
+      - ./config/kafka_client_jaas.conf:/opt/bitnami/kafka/config/kafka_client_jaas.conf
+      - ./config/server.properties:/opt/bitnami/kafka/config/server.properties
     depends_on:
       - zookeeper
-    environment:
-      # Use ZooKeeper for coordination
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
-      # Allow plaintext connections (only for development)
-      - ALLOW_PLAINTEXT_LISTENER=yes
-      # Set the container to run only as a broker to avoid controller-related errors
-      - KAFKA_CFG_PROCESS_ROLES=broker
-      # Define the broker listener on port 9092
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
-      # (Optional) Provide a dummy controller listener name so that if other parts of your image expect it, it's defined.
-      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=PLAINTEXT
-    ports:
-      - "9092:9092"
+    networks:
+      - realtime-stock-analysis-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "kafka-topics.sh",
+          "--bootstrap-server",
+          "localhost:9092",
+          "--list",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   app:
-    build: . # Builds the image using the Dockerfile in the current (project) directory
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: realtime-stock-analysis-app
+    volumes:
+      - ./config/secrets.yaml:/realtime-stock-analysis/config/secrets.yaml # change to docker secrets in production
+    environment:
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
     depends_on:
       - kafka
-      - zookeeper
-    ports:
-      - "8501:8501"
+    networks:
+      - realtime-stock-analysis-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+networks:
+  realtime-stock-analysis-network:
+    driver: bridge
