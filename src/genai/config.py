@@ -55,12 +55,12 @@ secrets = load_secrets()
 # Load the base configuration
 config = load_config()
 
-# Override values for OpenAI and Alpha Vantage.
+# Override values for OpenAI and Finnhub.
 # Precedence: Environment variable > secrets.yaml > config.yaml placeholder
 config["openai"] = {
     "api_key": os.environ.get("OPENAI_API_KEY", secrets.get("openai_api_key", config.get("openai", {}).get("api_key")))
 }
 
 config["alpha_vantage"] = {
-    "api_key": os.environ.get("ALPHAVANTAGE_API_KEY", secrets.get("alphavantage_api_key", config.get("alpha_vantage", {}).get("api_key")))
+    "api_key": os.environ.get("FINNHUB_API_KEY", secrets.get("finnhub_api_key", config.get("finnhub", {}).get("api_key")))
 } 
