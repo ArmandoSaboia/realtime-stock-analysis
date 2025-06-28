@@ -2,8 +2,8 @@
 openai:
   api_key: "${OPENAI_API_KEY}"  
 
-alpha_vantage:
-  api_key: "${ALPHAVANTAGE_API_KEY}"  
+finnhub:
+  api_key: "${FINNHUB_API_KEY}"  
 
 kafka:
   bootstrap_servers: "localhost:9092"
