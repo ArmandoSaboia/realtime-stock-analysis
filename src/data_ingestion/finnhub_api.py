@@ -7,8 +7,8 @@ class AlphaVantageAPI:
     def __init__(self):
         # Load API key from secrets.yaml
         secrets = load_secrets()
-        self.api_key = secrets.get("alpha_vantage_api_key")
-        self.base_url = "https://www.alphavantage.co/query"
+        self.api_key = secrets.get("finnhub_api_key")
+        self.base_url = "https://www.finnhub.io/query"
 
     def get_stock_data(self, symbol, interval="5min"):
         params = {
