@@ -6,10 +6,10 @@ import matplotlib.pyplot as plt
 from src.genai.langchain_insights import generate_insights
 from src.genai.config import config
 
-# Function to parse Alpha Vantage JSON responses
-def parse_alphavantage_data(json_data):
+# Function to parse Finnhub JSON responses
+def parse_finnhub_data(json_data):
     """
-    Parse AlphaVantage JSON result into a DataFrame.
+    Parse Finnhub JSON result into a DataFrame.
     Supports both Time Series and Technical Indicator data.
     """
     # Look for keys starting with "Time Series"
@@ -32,19 +32,19 @@ def parse_alphavantage_data(json_data):
             return df
     return pd.DataFrame()
 
-# Generic function to fetch data from Alpha Vantage
-def get_alphavantage_data(av_function, symbol=None, **kwargs):
+# Generic function to fetch data from Finnhub
+def get_finnhub_data(av_function, symbol=None, **kwargs):
     """
-    Retrieve data for any AlphaVantage function.
+    Retrieve data for any Finnhub function.
     The function parameter allows you to specify the endpoint (e.g., TIME_SERIES_INTRADAY, SMA, MACD, etc.).
     Additional parameters for the API endpoint should be passed in via kwargs.
     """
-    api_key = config.get("alpha_vantage", {}).get("api_key")
+    api_key = config.get("finnhub", {}).get("api_key")
     if not api_key or api_key == "REPLACE_WITH_ACTUAL_KEY":
-        st.error("Alpha Vantage API key is not set. Please update config/config.yaml.")
+        st.error("Finnhub API key is not set. Please update config/config.yaml.")
         return pd.DataFrame()
     
-    url = "https://www.alphavantage.co/query"
+    url = "https://www.finnhub.io/query"
     params = {
         "function": av_function,
         "apikey": api_key,
@@ -56,7 +56,7 @@ def get_alphavantage_data(av_function, symbol=None, **kwargs):
     response = requests.get(url, params=params)
     json_data = response.json()
     
-    df = parse_alphavantage_data(json_data)
+    df = parse_finnhub_data(json_data)
     if df.empty:
         st.error("No data found or error retrieving data. Response: " + str(json_data))
     return df
@@ -72,7 +72,7 @@ def main():
             "Stock Data", 
             "Stock Prediction", 
             "News Insights", 
-            "AlphaVantage Functions", 
+            "Finnhub Functions", 
             "Forex/Crypto Data", 
             "Economic Indicators"
         )
@@ -82,7 +82,7 @@ def main():
         ticker = st.sidebar.text_input("Enter stock ticker (e.g., AAPL)", value="AAPL")
         if st.sidebar.button("Get Stock Data"):
             st.subheader(f"Stock Data for {ticker.upper()}")
-            data = get_alphavantage_data("TIME_SERIES_DAILY", symbol=ticker)
+            data = get_finnhub_data("TIME_SERIES_DAILY", symbol=ticker)
             if data.empty:
                 st.write("No data found for ticker:", ticker)
             else:
@@ -97,7 +97,7 @@ def main():
         days = st.sidebar.number_input("Days ahead to predict", min_value=1, max_value=30, value=1)
         if st.sidebar.button("Predict Stock Price"):
             st.subheader(f"Stock Prediction for {ticker.upper()}")
-            data = get_alphavantage_data("TIME_SERIES_DAILY", symbol=ticker)
+            data = get_finnhub_data("TIME_SERIES_DAILY", symbol=ticker)
             if data.empty:
                 st.write("No data found for ticker:", ticker)
             else:
@@ -129,9 +129,9 @@ def main():
                 insights = generate_insights(user_query)
                 st.write(insights)
     
-    elif data_option == "AlphaVantage Functions":
+    elif data_option == "Finnhub Functions":
         av_function = st.sidebar.selectbox(
-            "Select AlphaVantage Function",
+            "Select Finnhub Function",
             options=[
                 "TIME_SERIES_INTRADAY", "TIME_SERIES_DAILY", "TIME_SERIES_DAILY_ADJUSTED",
                 "TIME_SERIES_WEEKLY", "TIME_SERIES_MONTHLY", "SMA", "EMA", "MACD", "RSI"
@@ -150,9 +150,9 @@ def main():
             interval = st.sidebar.selectbox("Select interval for MACD", options=["1min", "5min", "15min", "30min", "60min"])
             extra_params["interval"] = interval
             extra_params["series_type"] = st.sidebar.selectbox("Series Type for MACD", options=["close", "open", "high", "low"])
-        if st.sidebar.button("Get AlphaVantage Data"):
-            st.subheader(f"AlphaVantage Data: {av_function} for {symbol.upper()}")
-            df = get_alphavantage_data(av_function, symbol, **extra_params)
+        if st.sidebar.button("Get Finnhub Data"):
+            st.subheader(f"Finnhub Data: {av_function} for {symbol.upper()}")
+            df = get_finnhub_data(av_function, symbol, **extra_params)
             if not df.empty:
                 st.dataframe(df)
                 st.line_chart(df)
@@ -167,14 +167,14 @@ def main():
             to_currency = st.sidebar.text_input("To Currency (e.g., EUR)", value="EUR")
             if st.sidebar.button("Get Exchange Rate"):
                 st.subheader(f"Exchange Rate: {from_currency}/{to_currency}")
-                data = get_alphavantage_data("CURRENCY_EXCHANGE_RATE", from_currency=from_currency, to_currency=to_currency)
+                data = get_finnhub_data("CURRENCY_EXCHANGE_RATE", from_currency=from_currency, to_currency=to_currency)
                 if not data.empty:
                     st.json(data)
         elif forex_crypto_option == "CRYPTO_RATING":
             crypto_symbol = st.sidebar.text_input("Enter Crypto Symbol (e.g., BTC)", value="BTC")
             if st.sidebar.button("Get Crypto Rating"):
                 st.subheader(f"Crypto Rating for {crypto_symbol.upper()}")
-                data = get_alphavantage_data("CRYPTO_RATING", symbol=crypto_symbol)
+                data = get_finnhub_data("CRYPTO_RATING", symbol=crypto_symbol)
                 if not data.empty:
                     st.json(data)
     
@@ -185,7 +185,7 @@ def main():
         )
         if st.sidebar.button("Get Economic Data"):
             st.subheader(f"Economic Data: {economic_indicator}")
-            data = get_alphavantage_data(economic_indicator)
+            data = get_finnhub_data(economic_indicator)
             if not data.empty:
                 st.dataframe(data)
                 st.line_chart(data)
