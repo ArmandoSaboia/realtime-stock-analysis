@@ -14,13 +14,13 @@ That’s where **Real-Time Stock Market Analysis** comes in.
 
 ### Mission
  I've built this project to empower investors, analysts, and enthusiasts with a **comprehensive, AI-driven platform** that combines:
-- **Real-time data ingestion** from Alpha Vantage APIs.
+- **Real-time data ingestion** from Finnhub API.
 - **Batch processing** of historical data using Apache Spark and Delta Lake.
 - **Generative AI insights** powered by LangChain and LlamaIndex.
 - **Interactive dashboards** with Streamlit for user-driven exploration.
 
 ### How It Works
-1. **Data Ingestion**: Fetch real-time stock data using Alpha Vantage APIs and stream it into Apache Kafka.
+1. **Data Ingestion**: Fetch real-time stock data using Finnhub API and stream it into Apache Kafka.
 2. **Data Processing**: Use Apache Spark and dbt to transform raw data into actionable insights.
 3. **AI-Powered Insights**: Leverage Generative AI (LangChain) to analyze unstructured data like news articles and generate meaningful insights.
 4. **Interactive Dashboard**: Ask questions about the stock market in the Streamlit dashboard and get instant AI-generated responses.
@@ -49,7 +49,7 @@ realtime-stock-analysis/
 ├── src/
 │   ├── data_ingestion/
 │   │   ├── __init__.py
-│   │   ├── alphavantage_api.py
+│   │   ├── finnhub_api.py
 │   │   └── kafka_producer.py
 │   ├── feature_engineering/
 │   │   ├── __init__.py
@@ -121,7 +121,7 @@ pip install -r requirements.txt
 ## Key Components
 
 ### Data Ingestion
-* Fetch real-time stock data using Alpha Vantage APIs.
+* Fetch real-time stock data using Finnhub API.
 * Stream data into Apache Kafka for real-time processing.
 
 ### Data Storage & Processing
