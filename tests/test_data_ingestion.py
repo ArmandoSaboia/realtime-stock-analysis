@@ -1,9 +1,9 @@
 import unittest
-from src.data_ingestion.alphavantage_api import AlphaVantageAPI
+from src.data_ingestion.finnhub_api import FinnhubAPI
 
-class TestAlphaVantageAPI(unittest.TestCase):
+class TestFinnhubAPI(unittest.TestCase):
     def test_get_stock_data(self):
-        api = AlphaVantageAPI(api_key="demo")
+        api = FinnhubAPI(api_key="demo")
         data = api.get_stock_data("AAPL")
         self.assertIn("Time Series (5min)", data)
 
