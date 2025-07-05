@@ -1,13 +1,11 @@
 import requests
 from kafka import KafkaProducer
 import json
-from src.utils.helpers import load_secrets
+import os
 
 class FinnhubAPI:
     def __init__(self):
-        # Load API key from secrets.yaml
-        secrets = load_secrets()
-        self.api_key = secrets.get("finnhub_api_key")
+        self.api_key = os.getenv("FINNHUB_API_KEY")
         self.base_url = "https://www.finnhub.io/query"
 
     def get_stock_data(self, symbol, interval="5min"):
@@ -21,7 +19,8 @@ class FinnhubAPI:
         return response.json()
 
 class KafkaProducerWrapper:
-    def __init__(self, bootstrap_servers):
+    def __init__(self):
+        bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
         self.producer = KafkaProducer(
             bootstrap_servers=bootstrap_servers,
             value_serializer=lambda v: json.dumps(v).encode('utf-8')

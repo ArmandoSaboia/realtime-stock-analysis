@@ -1,0 +1,5 @@
+FROM realtime-stock-analysis-base
+
+WORKDIR /app
+
+CMD ["python", "src/model_training/train_model.py"]
