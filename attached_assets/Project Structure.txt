@@ -1,0 +1,87 @@
+## Project Structure
+
+The project is organized as follows:
+```
+realtime-stock-analysis/
+├── src/
+│   ├── data_ingestion/
+│   │   ├── __init__.py
+│   │   ├── alphavantage_api.py  
+│   │   └── kafka_producer.py    
+│   ├── data_processing/         
+│   │   ├── __init__.py
+│   │   └── spark_processor.py   
+│   ├── feature_engineering/
+│   │   ├── __init__.py
+│   │   └── feature_pipeline.py  
+│   ├── model_training/
+│   │   ├── __init__.py
+│   │   └── train_model.py       
+│   ├── prediction/
+│   │   ├── __init__.py
+│   │   └── predict.py           
+│   ├── stream_processing/       
+│   │   ├── __init__.py
+│   │   └── bytewax_processor.py 
+│   ├── model_serving/           
+│   │   ├── __init__.py
+│   │   └── stock_prediction_service.py  
+│   ├── visualization/
+│   │   ├── __init__.py
+│   │   └── streamlit_dashboard.py  
+│   └── utils/
+│       ├── __init__.py
+│       └── helpers.py           
+├── tests/
+│   ├── test_data_ingestion.py   
+│   ├── test_feature_engineering.py  
+│   ├── test_model_training.py   
+│   ├── test_data_processing.py  
+│   └── test_model_serving.py    
+├── notebooks/
+│   └── exploratory_analysis.ipynb  
+├── config/
+│   ├── config.yaml              
+│   └── secrets.yaml             
+├── data/
+│   ├── raw/                     
+│   ├── processed/               
+│   └── delta/                   
+├── dbt_project/                 
+│   ├── dbt_project.yml          
+│   ├── models/                 
+│   │   ├── schema.yml           
+│   │   ├── staging/             
+│   │   │   └── stg_stock_data.sql  
+│   │   ├── intermediate/        
+│   │   │   └── int_stock_metrics.sql  
+│   │   └── marts/               
+│   │       └── finance/         
+│   │           └── stock_analysis.sql  
+│   ├── macros/                 
+│   │   └── calculate_moving_avg.sql  
+│   └── seeds/                   
+│       └── stock_tickers.csv    
+├── airflow/                     
+│   ├── dags/                    
+│   │   └── stock_data_pipeline.py 
+│   └── plugins/                 
+│       └── operators/           
+│           └── alphavantage_operator.py  
+├── .github/
+│   └── workflows/
+│       └── ci-cd.yml            
+├── api/                         
+│   ├── __init__.py
+│   ├── main.py                 
+│   ├── models.py                
+│   └── routers/                 
+│       ├── __init__.py
+│       ├── stocks.py            
+│       └── predictions.py      
+├── requirements.txt             
+├── Dockerfile                   
+├── docker-compose.yml           
+├── README.md                    
+└── LICENSE               
+```

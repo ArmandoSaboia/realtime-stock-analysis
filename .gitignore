@@ -11,6 +11,14 @@ data/
 
 # Ignore virtual environments
 venv/
+llm_env/
+venv_prediction/
 
 # Ignore VSCode settings
 .vscode/
+
+# Ignore build artifacts and temporary files
+realtime_stock_analysis.egg-info/
+=0.26.0
+test_model.pkl
+project_structure.txt
