@@ -3,7 +3,7 @@ from kafka import KafkaProducer
 import json
 from src.utils.helpers import load_secrets
 
-class AlphaVantageAPI:
+class FinnhubAPI:
     def __init__(self):
         # Load API key from secrets.yaml
         secrets = load_secrets()

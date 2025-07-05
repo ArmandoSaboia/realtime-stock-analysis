@@ -12,12 +12,12 @@ bentoml
 fastapi
 pydantic
 pytest
-delta-spark
+delta-spark==2.4.0
 dbt-core
 apache-airflow
 prometheus-client
 elasticsearch
-jaeger-client
+jaeger-client==4.8.0
 numexpr
 numpy
 pandas
