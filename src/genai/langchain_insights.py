@@ -1,7 +1,7 @@
 import os
 from langchain.llms import OpenAI
-from llama_index.readers import SimpleDirectoryReader
-from llama_index import GPTListIndex
+from llama_index.core import SimpleDirectoryReader
+from llama_index.core import GPTListIndex
 from src.genai.config import config
 
 # Retrieve the OpenAI API key from the configuration

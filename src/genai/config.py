@@ -2,16 +2,6 @@ import os
 import yaml
 import re
 
-def load_secrets():
-    filepath = "/realtime-stock-analysis/config/secrets.yaml"
-    try:
-        with open(filepath, "r") as file:
-            return yaml.safe_load(file)
-    except FileNotFoundError:
-        raise FileNotFoundError(f"Secrets file not found at {filepath}")
-    except IsADirectoryError:
-        raise IsADirectoryError(f"'{filepath}' is a directory, not a file.")
-
 def substitute_env_variables(config):
     """
     Recursively replace ${VAR} placeholders in the config with
@@ -49,18 +39,15 @@ def load_config(filepath="config/config.yaml"):
     else:
         raise FileNotFoundError(f"{filepath} not found. Please create it with the required keys.")
 
-# Load secrets from a separate file (if any)
-secrets = load_secrets()
-
 # Load the base configuration
 config = load_config()
 
 # Override values for OpenAI and Finnhub.
-# Precedence: Environment variable > secrets.yaml > config.yaml placeholder
+# Precedence: Environment variable > config.yaml placeholder
 config["openai"] = {
-    "api_key": os.environ.get("OPENAI_API_KEY", secrets.get("openai_api_key", config.get("openai", {}).get("api_key")))
+    "api_key": os.environ.get("OPENAI_API_KEY", config.get("openai", {}).get("api_key"))
 }
 
 config["alpha_vantage"] = {
-    "api_key": os.environ.get("FINNHUB_API_KEY", secrets.get("finnhub_api_key", config.get("finnhub", {}).get("api_key")))
-} 
+    "api_key": os.environ.get("FINNHUB_API_KEY", config.get("finnhub", {}).get("api_key"))
+}
