@@ -56,5 +56,7 @@ pathspec
 sqlparse
 urllib3
 langchain-groq
-alpha_vantage
 twelvedata
+torch
+transformers
+plotly
