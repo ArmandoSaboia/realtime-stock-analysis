@@ -60,3 +60,4 @@ twelvedata
 torch
 transformers
 plotly
+scikit-learn

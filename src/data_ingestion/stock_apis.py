@@ -6,7 +6,7 @@ from twelvedata import TDClient
 
 class TwelveDataAPI:
     def __init__(self):
-        self.api_key = os.getenv("TWELVE_DATA_API_KEY")
+        self.api_key = os.getenv("TWELVEDATA_API_KEY")
         if not self.api_key:
             raise ValueError("Twelve Data API key is not set. Please set TWELVE_DATA_API_KEY environment variable.")
         self.td = TDClient(apikey=self.api_key)

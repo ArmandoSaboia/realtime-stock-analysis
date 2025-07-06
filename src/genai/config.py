@@ -49,5 +49,5 @@ config["groq"] = {
 }
 
 config["twelve_data"] = {
-    "api_key": os.environ.get("TWELVE_DATA_API_KEY", config.get("twelve_data", {}).get("api_key"))
+    "api_key": os.environ.get("TWELVEDATA_API_KEY", config.get("twelve_data", {}).get("api_key"))
 }

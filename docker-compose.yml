@@ -63,6 +63,7 @@ services:
       context: .
       dockerfile: Dockerfile.streamlit
     container_name: realtime-stock-analysis-streamlit
+    env_file: ./.env
     environment:
       - ALPHA_VANTAGE_API_KEY=${ALPHA_VANTAGE_API_KEY}
       - TWELVE_DATA_API_KEY=${TWELVE_DATA_API_KEY}
@@ -91,6 +92,7 @@ services:
       context: .
       dockerfile: Dockerfile.data_pipeline
     container_name: realtime-stock-analysis-data-pipeline
+    env_file: ./.env
     environment:
       - ALPHA_VANTAGE_API_KEY=${ALPHA_VANTAGE_API_KEY}
       - TWELVE_DATA_API_KEY=${TWELVE_DATA_API_KEY}
@@ -107,6 +109,7 @@ services:
       context: .
       dockerfile: Dockerfile.model_training
     container_name: realtime-stock-analysis-model-training
+    env_file: ./.env
     environment:
       - ALPHA_VANTAGE_API_KEY=${ALPHA_VANTAGE_API_KEY}
       - TWELVE_DATA_API_KEY=${TWELVE_DATA_API_KEY}
@@ -142,6 +145,7 @@ services:
       context: .
       dockerfile: Dockerfile.mlflow
     container_name: realtime-stock-analysis-mlflow
+    env_file: ./.env
     environment:
       - MLFLOW_TRACKING_URI=http://mlflow:5000
       - MLFLOW_BACKEND_STORE_URI=postgresql://user:password@postgres:5432/stock_analysis_db
@@ -159,6 +163,7 @@ services:
   airflow:
     image: apache/airflow:2.10.5
     container_name: realtime-stock-analysis-airflow
+    env_file: ./.env
     environment:
       - AIRFLOW_DB_HOST=postgres
       - AIRFLOW_DB_USER=user

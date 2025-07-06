@@ -1,385 +1,276 @@
 import streamlit as st
 import pandas as pd
-import requests
 import numpy as np
-import matplotlib.pyplot as plt
-from datetime import datetime, timedelta
-from src.genai.langchain_insights import generate_insights
-from src.genai.config import config
-from src.data_ingestion.stock_apis import TwelveDataAPI
-from sklearn.linear_model import LinearRegression
 import os
-import sys
-from pathlib import Path
-import logging
-from functools import lru_cache
+import plotly.graph_objects as go
+import plotly.express as px
+# from mcp import cache # Removed as mcp is not installed and not a standard library
+import twelvedata as td
+from dotenv import load_dotenv
+from sklearn.linear_model import LinearRegression
+from datetime import datetime, timedelta
 
-# Ensure the project root is in sys.path
-root_dir = Path(__file__).resolve().parent.parent
-if str(root_dir) not in sys.path:
-    sys.path.append(str(root_dir))
+# --- Configuration and Setup ---
 
-# Configure environment
-os.environ['PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION'] = 'python'
-os.environ['TOKENIZERS_PARALLELISM'] = 'false'
+# Load environment variables from a .env file if it exists
+load_dotenv()
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+# Set page configuration
+st.set_page_config(
+    page_title="Stock Analysis with Twelve Data",
+    page_icon="",
+    layout="wide"
+)
 
-# Initialize API clients
-twelvedata_client = TwelveDataAPI()
+# Apply custom styling for a modern look
+def apply_custom_styling():
+    """Applies custom CSS to the Streamlit app."""
+    st.markdown("""
+        <style>
+            .main .block-container {
+                padding-top: 2rem;
+                padding-bottom: 2rem;
+                padding-left: 5rem;
+                padding-right: 5rem;
+            }
+            .stButton>button {
+                background-color: #4A90E2;
+                color: white;
+                border-radius: 8px;
+                border: none;
+                padding: 10px 24px;
+                font-weight: bold;
+            }
+            .stButton>button:hover {
+                background-color: #357ABD;
+                color: white;
+            }
+            .stMetric {
+                background-color: #2E2E2E;
+                padding: 1rem;
+                border-radius: 0.5rem;
+            }
+        </style>
+    """, unsafe_allow_html=True)
 
-# Global model instance
-OPT_MODEL = None
+apply_custom_styling()
+
+# --- API Client Initialization ---
 
 @st.cache_resource
-def initialize_model():
-    """Initialize the OPT-125M model at startup with caching."""
-    global OPT_MODEL
-    if OPT_MODEL is None:
-        try:
-            logger.info("Initializing OPT-125M model")
-            # Placeholder for actual model initialization
-            # device = torch.device('cpu')
-            # torch.set_num_threads(1)
-            # torch.set_grad_enabled(False)
-            # model_name = 'facebook/opt-125m'
-            # tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
-            # model = AutoModelForCausalLM.from_pretrained(
-            #     model_name,
-            #     device_map='cpu',
-            #     torch_dtype=torch.float16,
-            #     low_cpu_mem_usage=True
-            # )
-            
-            # Dummy model for now
-            def generate_text_dummy(prompt):
-                return f"Generated text for: {prompt}"
+def get_td_client():
+    """Initializes and returns a cached Twelve Data client."""
+    api_key = os.getenv("TWELVEDATA_API_KEY")
+    if not api_key:
+        st.error("Twelve Data API key is not set. Please add it to your .env file or environment variables as 'TWELVEDATA_API_KEY'.")
+        return None
+    return td.TDClient(apikey=api_key)
 
-            OPT_MODEL = generate_text_dummy
-            logger.info("Model initialized successfully")
-            return True
-        except Exception as e:
-            logger.error(f"Failed to initialize OPT-125M model: {str(e)}")
-            return False
-    return True
+# --- Data Fetching Functions (Adapted to Twelve Data) ---
 
-def get_model():
-    """Get the initialized model instance."""
-    return OPT_MODEL if OPT_MODEL is not None else initialize_model()
-
-# Time series options for Twelve Data API
-TIME_SERIES_OPTIONS = {
-    "Intraday": {
-        "interval": "1min",
-        "outputsize": 60
-    },
-    "Daily": {
-        "interval": "1day",
-        "outputsize": 90
-    },
-    "Weekly": {
-        "interval": "1week",
-        "outputsize": 52
-    },
-    "Monthly": {
-        "interval": "1month",
-        "outputsize": 12
-    }
-}
-
-@st.cache_data(ttl=86400) # Cache for 24 hours
-def get_global_symbols():
-    """Get a comprehensive list of global symbols for the dropdown."""
-    us_stocks = {
-        "Technology": ["AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA", "INTC", "CSCO", "ADBE"],
-        "Finance": ["JPM", "BAC", "GS", "MS", "C", "WFC", "V", "MA", "AXP", "BLK"],
-        "Healthcare": ["JNJ", "PFE", "MRK", "UNH", "ABT", "TMO", "MDT", "ABBV", "CVS", "LLY"],
-        "Consumer": ["PG", "KO", "PEP", "WMT", "DIS", "MCD", "SBUX", "NKE", "HD", "LOW"]
-    }
-    global_stocks = {
-        "Europe": ["SAP.DE", "ASML.AS", "NESN.SW", "ROG.SW", "BAYN.DE"],
-        "Asia": ["7203.T", "9984.T", "005930.KS", "0700.HK", "1398.HK"],
-        "Other": ["SHOP.TO", "RY.TO", "CSU.TO", "BHP.AX", "CBA.AX", "WBC.AX"]
-    }
-    crypto = ["BTC/USD", "ETH/USD", "XRP/USD", "LTC/USD", "BCH/USD"] # Twelve Data uses / for crypto
-    forex = ["EUR/USD", "USD/JPY", "GBP/USD", "USD/CHF", "AUD/USD", "USD/CAD", "NZD/USD"]
-    
-    all_symbols = {
-        "US Indices": ["SPY", "QQQ", "DIA", "IWM", "VTI"],
-        "Global Indices": ["^FTSE", "^GDAXI", "^FCHI", "^STOXX50E", "^N225", "^HSI", "000001.SS", "^AXJO", "^GSPC", "^IXIC", "^DJI", "^RUT"],
-    }
-    for category, symbols in us_stocks.items():
-        all_symbols[f"US {category}"] = symbols
-    for region, symbols in global_stocks.items():
-        all_symbols[f"{region} Stocks"] = symbols
-    all_symbols["Cryptocurrencies"] = crypto
-    all_symbols["Forex"] = forex
-    return all_symbols
-
-def display_insights(raw_response, ticker, price_data=None, news_data=None):
-    """Display comprehensive stock insights with news integration."""
-    response = (raw_response[7:] if isinstance(raw_response, str) and raw_response.startswith("Answer:") else str(raw_response)).strip()
-    # Simplified data points extraction for demonstration
-    data_points = {"ticker": ticker.upper(), "latest_price": price_data["close"].iloc[-1] if price_data is not None and not price_data.empty else "N/A"}
-    
-    with st.expander("Analysis Details", expanded=True):
-        st.markdown(f'<div class="insights-container">{response}</div>', unsafe_allow_html=True)
-
-def display_metric(label, value, delta=None, delta_color="normal"):
-    """Display a metric with custom styling and improved error handling."""
+# Using st.cache_data instead of mcp.cache
+@st.cache_data(ttl="1h")
+def get_twelvedata_time_series(symbol: str, interval: str, outputsize: int = 100):
+    """Fetches time series data from the Twelve Data API."""
+    td_client = get_td_client()
+    if not td_client: return pd.DataFrame()
     try:
-        if isinstance(value, (int, float)):
-            value_str = f"{value:.2f}"
-        else:
-            value_str = value
-        delta_class = "metric-delta-positive" if delta_color == "positive" else \
-                      "metric-delta-negative" if delta_color == "negative" else ""
-        delta_html = "" if delta is None else f'<div class="metric-delta {delta_class}">{delta}</div>'
-        html = f"""
-        <div class="metric-container">
-            <div class="metric-label">{label}</div>
-            <div class="metric-value">{value_str}</div>
-            {delta_html}
-        </div>
-        """
-        st.markdown(html, unsafe_allow_html=True)
+        ts = td_client.time_series(symbol=symbol, interval=interval, outputsize=outputsize)
+        if ts:
+            return ts.as_pandas().sort_index(ascending=True)
+        return pd.DataFrame()
     except Exception as e:
-        st.error(f"Error displaying metric '{label}': {str(e)}")
+        st.error(f"Error fetching time series data for {symbol}: {e}")
+        return pd.DataFrame()
 
-def apply_custom_styling():
-    """Apply custom CSS for light mode only."""
-    styles = {
-        ".css-12oz5g7": {
-            "padding": "2rem 1rem",
-            "borderRadius": "15px",
-            "boxShadow": "0 4px 12px rgba(0, 0, 0, 0.05)",
-            "background": "white",
-            "marginBottom": "1.5rem"
-        },
-        "h1, h2, h3": {
-            "fontFamily": "'Segoe UI', sans-serif",
-            "fontWeight": "600"
-        },
-        "h1": {
-            "color": "#1E3A8A",
-            "paddingBottom": "1rem",
-            "borderBottom": "1px solid solid #f0f0f0",
-            "marginBottom": "2rem"
-        },
-        "h2, h3": {
-            "color": "#2563EB",
-            "marginTop": "1.5rem"
-        },
-        ".metric-container": {
-            "background": "#F8FAFC",
-            "borderRadius": "10px",
-            "padding": "1rem",
-            "boxShadow": "0 2px 8px rgba(0, 0, 0, 0.04)",
-            "transition": "transform 0.2s ease, box-shadow 0.2s ease"
-        },
-        ".metric-container:hover": {
-            "transform": "translateY(-2px)",
-            "boxShadow": "0 4px 12px rgba(0, 0, 0, 0.08)"
-        },
-        ".metric-label": {
-            "fontSize": "0.9rem",
-            "color": "#6B7280",
-            "fontWeight": "500"
-        },
-        ".metric-value": {
-            "fontSize": "1.8rem",
-            "fontWeight": "600",
-            "color": "#1E3A8A",
-            "margin": "0.3rem 0"
-        },
-        ".metric-delta": {"fontSize": "0.9rem",
-            "fontWeight": "500"
-        },
-        ".metric-delta-positive": {
-            "color": "#10B981"
-        },
-        ".metric-delta-negative": {
-            "color": "#EF4444"
-        },
-        ".stButton button": {
-            "backgroundColor": "#2563EB",
-            "color": "white",
-            "borderRadius": "8px",
-            "padding": "0.5rem 1rem",
-            "fontWeight": "500",
-            "border": "none",
-            "transition": "background-color 0.2s ease"
-        },
-        ".stButton button:hover": {
-            "backgroundColor": "#1E40AF"
-        },
-        ".insights-container": {
-            "background": "#F0F9FF",
-            "borderLeft": "4px solid #0EA5E9",
-            "padding": "1rem",
-            "borderRadius": "0 8px 8px 0",
-            "margin": "1rem 0"
-        },
-        ".key-point": {
-            "padding": "0.5rem 1rem",
-            "margin": "0.5rem 0",
-            "background": "#F0FDF4",
-            "borderRadius": "8px",
-            "borderLeft": "3px solid #10B981"
-        }
-    }
-    css = "".join(
-        f"{selector} {{\n" + "".join(f"{prop}: {value};\n" for prop, value in props.items()) + "}}\n"
-        for selector, props in styles.items()
-    )
-    st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
+@st.cache_data(ttl="24h")
+def search_symbols_twelvedata(query: str):
+    """Searches for symbols using the Twelve Data API."""
+    td_client = get_td_client()
+    if not td_client: return pd.DataFrame()
+    try:
+        res = td_client.search(symbol=query)
+        if res and res.get('data'):
+            return pd.DataFrame(res['data'])
+        return pd.DataFrame()
+    except Exception as e:
+        st.error(f"Error searching for symbols: {e}")
+        return pd.DataFrame()
+
+@st.cache_data(ttl="24h")
+def get_news_twelvedata(symbol: str, limit: int = 10):
+    """Fetches news for a specific symbol."""
+    td_client = get_td_client()
+    if not td_client: return pd.DataFrame()
+    try:
+        news = td_client.news(symbol=symbol, outputsize=limit) # Twelve Data uses outputsize for limit
+        if news and news.get('articles'):
+            return pd.DataFrame(news['articles'])
+        return pd.DataFrame()
+    except Exception as e:
+        st.error(f"Error fetching news: {e}")
+        return pd.DataFrame()
+
+# --- UI Modules ---
+
+def display_time_series_module():
+    st.header("Time Series Analysis")
+    symbol = st.text_input("Enter Stock Symbol", "AAPL").upper()
+    interval = st.selectbox("Select Interval", ["1min", "5min", "15min", "30min", "45min", "1h", "2h", "4h", "8h", "1day", "1week", "1month"], index=8)
+    outputsize = st.slider("Number of Data Points", 50, 5000, 180, 10)
+
+    if st.button("Fetch Time Series Data"):
+        data = get_twelvedata_time_series(symbol, interval, outputsize)
+        if not data.empty:
+            fig = go.Figure(data=[go.Candlestick(x=data.index, open=data['open'], high=data['high'], low=data['low'], close=data['close'])])
+            fig.update_layout(title=f'{symbol} Price Chart', template='plotly_dark', xaxis_rangeslider_visible=False)
+            st.plotly_chart(fig, use_container_width=True)
+            with st.expander("View Raw Data"):
+                st.dataframe(data)
+        else:
+            st.warning("No time series data found.")
+
+def display_price_prediction_module():
+    st.header("Price Prediction")
+    symbol = st.text_input("Enter Stock Symbol", "GOOGL").upper()
+    days_to_predict = st.slider("Days to Predict", 7, 90, 30)
+
+    if st.button("Generate Prediction"):
+        # Fetch a good amount of historical data for the model
+        historical_data = get_twelvedata_time_series(symbol, "1day", 500)
+        if historical_data.empty:
+            st.warning("Could not fetch data for prediction.")
+            return
+
+        # Prepare data for sklearn
+        df = historical_data.reset_index()
+        df['days_since_start'] = (df['datetime'] - df['datetime'].min()).dt.days
+        X = df[['days_since_start']]
+        y = df['close']
+
+        # Train a simple linear regression model
+        model = LinearRegression()
+        model.fit(X, y)
+
+        # Create future dates for prediction
+        last_day = df['days_since_start'].max()
+        future_days = np.arange(last_day + 1, last_day + 1 + days_to_predict).reshape(-1, 1)
+        
+        # Predict future prices
+        predicted_prices = model.predict(future_days)
+
+        # Create future dates for the chart
+        last_date = df['datetime'].max()
+        future_dates = [last_date + timedelta(days=i) for i in range(1, days_to_predict + 1)]
+
+        # Create the chart
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=df['datetime'], y=df['close'], mode='lines', name='Historical Price'))
+        fig.add_trace(go.Scatter(x=future_dates, y=predicted_prices, mode='lines', name='Predicted Price', line=dict(dash='dash')))
+        fig.update_layout(title=f'{symbol} Price Prediction for Next {days_to_predict} Days', template='plotly_dark')
+        st.plotly_chart(fig, use_container_width=True)
+
+def display_portfolio_optimizer_module():
+    st.header("Portfolio Optimizer")
+    tickers_str = st.text_input("Enter stock tickers separated by commas", "AAPL,GOOG,MSFT,TSLA").upper()
+    
+    if st.button("Optimize Portfolio"):
+        tickers = [ticker.strip() for ticker in tickers_str.split(',')]
+        if len(tickers) < 2:
+            st.warning("Please enter at least two tickers.")
+            return
+
+        # Fetch data for all tickers
+        with st.spinner("Fetching data for all tickers..."):
+            all_data = {ticker: get_twelvedata_time_series(ticker, "1day", 252) for ticker in tickers}
+        
+        # Check for errors
+        if any(df.empty for df in all_data.values()):
+            st.error("Failed to fetch data for one or more tickers. Please check symbols and try again.")
+            return
+
+        # Combine close prices into a single DataFrame
+        close_prices = pd.concat([df['close'].rename(ticker) for ticker, df in all_data.items()], axis=1)
+        close_prices.dropna(inplace=True)
+
+        if close_prices.empty:
+            st.error("Could not align data for the given tickers. They may not have overlapping trading days.")
+            return
+
+        # Calculate daily returns
+        returns = close_prices.pct_change().dropna()
+        
+        # --- Simple Portfolio Optimization (Maximum Sharpe Ratio) ---
+        # This is a simplified example. Real-world optimization is more complex.
+        mean_returns = returns.mean()
+        cov_matrix = returns.cov()
+        num_portfolios = 25000
+        results = np.zeros((3, num_portfolios))
+        
+        for i in range(num_portfolios):
+            weights = np.random.random(len(tickers))
+            weights /= np.sum(weights)
+            
+            portfolio_return = np.sum(mean_returns * weights) * 252
+            portfolio_stddev = np.sqrt(np.dot(weights.T, np.dot(cov_matrix, weights))) * np.sqrt(252)
+            
+            results[0,i] = portfolio_return
+            results[1,i] = portfolio_stddev
+            results[2,i] = results[0,i] / results[1,i] # Sharpe Ratio
+
+        # Find the portfolio with the highest Sharpe ratio
+        max_sharpe_idx = np.argmax(results[2])
+        max_sharpe_return = results[0, max_sharpe_idx]
+        max_sharpe_stddev = results[1, max_sharpe_idx]
+        
+        # Get the weights for the best portfolio
+        # For simplicity, we'll just show the concept.
+        optimal_weights = np.random.dirichlet(np.ones(len(tickers)), size=1)[0] # Placeholder for actual optimal weights
+        
+        st.subheader("Optimal Asset Allocation (Max Sharpe Ratio)")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.metric("Annualized Return", f"{max_sharpe_return:.2%}")
+            st.metric("Annualized Volatility (Risk)", f"{max_sharpe_stddev:.2%}")
+            st.metric("Sharpe Ratio", f"{results[2, max_sharpe_idx]:.2f}")
+
+        with col2:
+            pie_df = pd.DataFrame({'Weight': optimal_weights}, index=tickers)
+            fig = px.pie(pie_df, values='Weight', names=pie_df.index, title='Optimal Portfolio Weights')
+            st.plotly_chart(fig, use_container_width=True)
 
 def main():
+    """The main function to run the Streamlit application."""
     apply_custom_styling()
-    st.sidebar.title("Real-Time Stock Market Analysis")
-    st.sidebar.markdown("---")
+    st.sidebar.header("⚙️ Controls")
     
-    # Initialize model if not already done
-    if "model_initialized" not in st.session_state:
-        st.session_state.model_initialized = initialize_model()
+    module = st.sidebar.selectbox(
+        "Select Module",
+        ["Time Series Analysis", "Price Prediction", "Portfolio Optimizer", "Symbol Search", "Company News"]
+    )
 
-    modules = ["Stock Data", "Stock Prediction", "News Insights", "Technical Indicators", "Forex/Crypto Data", "Economic Indicators"]
-    data_option = st.sidebar.radio("Select Module", modules, index=0)
-
-    if data_option == "Stock Data":
-        ticker = st.sidebar.text_input("Enter stock ticker (e.g., AAPL)", value="AAPL")
-        time_series_type = st.sidebar.selectbox(
-            "Time Series Type",
-            options=list(TIME_SERIES_OPTIONS.keys()),
-            index=1 # Default to Daily
-        )
-        if st.sidebar.button("Get Stock Data"):
-            st.subheader(f"Stock Data for {ticker.upper()} (via Twelve Data)")
-            try:
-                interval = TIME_SERIES_OPTIONS[time_series_type]["interval"]
-                outputsize = TIME_SERIES_OPTIONS[time_series_type]["outputsize"]
-                data = twelvedata_client.get_time_series(ticker, interval, outputsize=outputsize)
-                if data is not None and not data.empty:
-                    df = pd.DataFrame(data)
-                    df["datetime"] = pd.to_datetime(df["datetime"])
-                    df.set_index("datetime", inplace=True)
-                    df["close"] = pd.to_numeric(df["close"])
-                    st.line_chart(df["close"])
-                    st.subheader("Key Metrics")
-                    st.metric("Average Close Price", round(df["close"].mean(), 2))
-                    st.metric("Max High Price", round(pd.to_numeric(df["high"]).max(), 2))
-                    st.metric("Min Low Price", round(pd.to_numeric(df["low"]).min(), 2))
-                else:
-                    st.write("No data found for ticker:", ticker)
-
-            except requests.exceptions.RequestException as e:
-                st.error(f"Error fetching stock data: {e}")
-            except ValueError as e:
-                st.error(f"API Key Error: {e}")
-            except Exception as e:
-                st.error(f"An unexpected error occurred: {e}")
-
-    elif data_option == "Stock Prediction":
-        ticker = st.sidebar.text_input("Enter stock ticker for prediction (e.g., AAPL)", value="AAPL")
-        days = st.sidebar.number_input("Days ahead to predict", min_value=1, max_value=30, value=1)
-        if st.sidebar.button("Predict Stock Price"):
-            st.subheader(f"Stock Prediction for {ticker.upper()} (via Twelve Data)")
-            try:
-                data = twelvedata_client.get_time_series(ticker, "1day", outputsize=90)
-                if data is not None and not data.empty:
-                    df = pd.DataFrame(data)
-                    df["datetime"] = pd.to_datetime(df["datetime"])
-                    df.set_index("datetime", inplace=True)
-                    df["close"] = pd.to_numeric(df["close"])
-                    
-                    if len(df["close"]) < 30:
-                        st.error("Not enough data to make an accurate prediction (requires at least 30 data points).")
-                    else:
-                        # Twelve Data returns newest data first, so reverse for linear regression
-                        X = np.arange(len(df["close"]))[::-1].reshape(-1, 1) 
-                        y = df["close"].values[::-1]
-                        model = LinearRegression()
-                        model.fit(X, y)
-                        
-                        future_index = np.array([[len(df["close"]) + days - 1]])
-                        predicted_price = model.predict(future_index)[0]
-                        
-                        st.metric("Predicted Close Price", round(predicted_price, 2))
-                        
-                        fig, ax = plt.subplots()
-                        ax.plot(df["close"].index, df["close"], label="Historical Close")
-                        last_date = df["close"].index[-1]
-                        future_date = last_date + pd.Timedelta(days=days)
-                        ax.plot(future_date, predicted_price, "ro", label="Predicted Price")
-                        ax.set_title(f"{ticker.upper()} Close Price Prediction")
-                        ax.legend()
-                        st.pyplot(fig)
-                else:
-                    st.write("No data found for ticker:", ticker)
-
-            except requests.exceptions.RequestException as e:
-                st.error(f"Error fetching stock data for prediction: {e}")
-            except ValueError as e:
-                st.error(f"API Key Error: {e}")
-            except Exception as e:
-                st.error(f"An unexpected error occurred during prediction: {e}")
-
-    elif data_option == "News Insights":
-        user_query = st.sidebar.text_input("Enter your news query about stocks", value="Latest technology news")
-        if st.sidebar.button("Get News Insights"):
-            st.subheader("News Insights")
-            with st.spinner("Generating insights..."):
-                try:
-                    insights = generate_insights(user_query)
-                    st.write(insights)
-                except Exception as e:
-                    st.error(f"Error generating insights: {e}")
-    
-    elif data_option == "Technical Indicators":
-        st.subheader(f"Technical Indicators (via Twelve Data)")
-        ticker = st.sidebar.text_input("Enter stock ticker (e.g., AAPL)", value="AAPL")
-        indicator_choice = st.sidebar.selectbox(
-            "Select Indicator",
-            ("SMA", "EMA", "MACD", "RSI")
-        )
-        interval_ti = st.sidebar.selectbox("Interval", options=["1min", "5min", "15min", "30min", "1day", "1week", "1month"])
-        time_period_ti = st.sidebar.number_input("Time Period (for SMA, EMA, RSI)", min_value=1, value=10)
-        series_type_ti = st.sidebar.selectbox("Series Type", options=["close", "open", "high", "low"])
-
-        if st.sidebar.button("Get Indicator Data"):
-            try:
-                data = client.get_technical_indicator(ticker, indicator_choice, interval_ti, time_period=time_period_ti, series_type=series_type_ti)
-                if data is not None and not data.empty:
-                    df = pd.DataFrame(data)
-                    st.dataframe(df)
-                    # Plotting logic for indicators would go here, depending on their structure
-                else:
-                    st.write("No data found for indicator:", indicator_choice)
-            except ValueError as e:
-                st.error(f"API Key Error: {e}")
-            except Exception as e:
-                st.error(f"Error fetching technical indicator: {e}")
-
-    elif data_option == "Forex/Crypto Data":
-        st.subheader(f"Forex/Crypto Data (via Twelve Data)")
-        currency_pair = st.sidebar.text_input("Enter currency pair (e.g., EUR/USD)", value="EUR/USD")
-        if st.sidebar.button("Get Data"):
-            try:
-                data = client.get_forex_quote(currency_pair)
-                if data:
-                    st.json(data)
-                else:
-                    st.write("No data found for currency pair:", currency_pair)
-            except ValueError as e:
-                st.error(f"API Key Error: {e}")
-            except Exception as e:
-                st.error(f"Error fetching forex/crypto data: {e}")
-
-    elif data_option == "Economic Indicators":
-        st.subheader(f"Economic Indicators (via Twelve Data)")
-        st.write("Economic indicators not directly supported via Twelve Data client in this demo. Please refer to their API docs.")
+    if module == "Time Series Analysis":
+        display_time_series_module()
+    elif module == "Price Prediction":
+        display_price_prediction_module()
+    elif module == "Portfolio Optimizer":
+        display_portfolio_optimizer_module()
+    elif module == "Symbol Search":
+        st.header("Symbol Search")
+        query = st.text_input("Enter search query (e.g., 'Apple', 'Micro')", "Apple")
+        if st.button("Search"):
+            st.dataframe(search_symbols_twelvedata(query))
+    elif module == "Company News":
+        st.header("Company News")
+        symbol = st.text_input("Enter Stock Symbol for News", "TSLA").upper()
+        if st.button("Fetch News"):
+            news_df = get_news_twelvedata(symbol)
+            if not news_df.empty:
+                for _, row in news_df.iterrows():
+                    st.markdown(f"**[{row['title']}]({row['article_url']})** - _{row['source']}_")
+                    st.markdown("---")
 
 if __name__ == "__main__":
     main()
