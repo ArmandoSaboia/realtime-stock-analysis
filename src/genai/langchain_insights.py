@@ -1,29 +1,25 @@
-import os
-from langchain.llms import OpenAI
-from llama_index.core import SimpleDirectoryReader
-from llama_index.core import GPTListIndex
+import streamlit as st
+from llama_index.core import SimpleDirectoryReader, GPTListIndex
+from langchain_groq import ChatGroq
 from src.genai.config import config
 
-# Retrieve the OpenAI API key from the configuration
-openai_api_key = config.get("openai", {}).get("api_key")
-if not openai_api_key:
-    raise ValueError("The OpenAI API key is not set. Please add it to config/config.yaml or set the environment variable.")
-
-# Instantiate the OpenAI LLM
-llm = OpenAI(temperature=0.7, openai_api_key=openai_api_key)
-
 def generate_insights(query):
-    """
-    Generate insights from news articles using the OpenAI model.
-    Loads documents from 'data/news_articles', creates an index,
-    converts it to a query engine, and queries it.
-    """
-    try:
-        documents = SimpleDirectoryReader("data/news_articles").load_data()
-        index = GPTListIndex(documents)
-        # Convert index to a query engine
-        query_engine = index.as_query_engine()
-        response = query_engine.query(query)
-        return response.response
-    except Exception as e:
-        return f"Error generating insights: {str(e)}"
+    # For now, we'll use a dummy directory reader. In a real scenario, this would load actual data.
+    # reader = SimpleDirectoryReader(input_dir="./data")
+    # documents = reader.load_data()
+
+    # For demonstration, let's assume some dummy documents
+    documents = ["Stock market showed a bullish trend today.", "Technology stocks are on the rise."]
+
+    groq_api_key = config.get("groq", {}).get("api_key")
+
+    if not groq_api_key:
+        raise ValueError("No API key found for Groq. Please set GROQ_API_KEY environment variable.")
+
+    llm = ChatGroq(temperature=0.7, groq_api_key=groq_api_key)
+
+    # Placeholder for actual insight generation using llama_index and LLM
+    # In a real application, you would build an index from documents and query it.
+    # For now, we'll just use the LLM to respond to the query.
+    response = llm.invoke(f"Generate insights based on the following query: {query}. Consider these documents: {documents}")
+    return response.content
