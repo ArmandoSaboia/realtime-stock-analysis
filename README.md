@@ -14,15 +14,15 @@ That’s where **Real-Time Stock Market Analysis** comes in.
 
 ### Mission
  I've built this project to empower investors, analysts, and enthusiasts with a **comprehensive, AI-driven platform** that combines:
-- **Real-time data ingestion** from Finnhub API.
+- **Real-time data ingestion** from Twelve Data API.
 - **Batch processing** of historical data using Apache Spark and Delta Lake.
-- **Generative AI insights** powered by LangChain and LlamaIndex.
+- **Generative AI insights** powered by LangChain and Groq API.
 - **Interactive dashboards** with Streamlit for user-driven exploration.
 
 ### How It Works
-1. **Data Ingestion**: Fetch real-time stock data using Finnhub API and stream it into Apache Kafka.
+1. **Data Ingestion**: Fetch real-time stock data using Twelve Data API and stream it into Apache Kafka.
 2. **Data Processing**: Use Apache Spark and dbt to transform raw data into actionable insights.
-3. **AI-Powered Insights**: Leverage Generative AI (LangChain) to analyze unstructured data like news articles and generate meaningful insights.
+3. **AI-Powered Insights**: Leverage Generative AI (Groq API) to analyze unstructured data like news articles and generate meaningful insights.
 4. **Interactive Dashboard**: Ask questions about the stock market in the Streamlit dashboard and get instant AI-generated responses.
 5. **Model Serving**: Serve machine learning models using BentoML to predict trends and outcomes.
 
@@ -49,8 +49,7 @@ realtime-stock-analysis/
 ├── src/
 │   ├── data_ingestion/
 │   │   ├── __init__.py
-│   │   ├── finnhub_api.py
-│   │   └── kafka_producer.py
+│   │   └── stock_apis.py
 │   ├── feature_engineering/
 │   │   ├── __init__.py
 │   │   └── feature_pipeline.py
@@ -99,29 +98,42 @@ realtime-stock-analysis/
    cd realtime-stock-analysis
    ```
 
-2. Install the dependencies:
+2. **Docker-based Setup (Recommended)**:
+   Ensure you have Docker and Docker Compose installed.
+   Create a `.env` file in the root directory of the project with your API keys:
+   ```
+   TWELVEDATA_API_KEY=YOUR_TWELVEDATA_API_KEY
+   GROQ_API_KEY=YOUR_GROQ_API_KEY
+   KAFKA_PASSWORD=YOUR_KAFKA_PASSWORD
+   ZOOKEEPER_DIGEST=YOUR_ZOOKEEPER_DIGEST
+   ```
+   Replace `YOUR_..._KEY` with your actual API keys and passwords.
+
+   Build and run the Docker containers:
    ```bash
-   pip install -r requirements.txt
+   docker-compose up --build -d
    ```
 
 ## Usage
 
-1. Start the application locally:
-```bash
-pip install -r requirements.txt
-```
-2. Access the Streamlit dashboard at http://localhost:8501.
+1. Access the Streamlit dashboard at `http://localhost:8501`.
 
-3. Interact with the dashboard:
-**Ask questions about the stock market in the sidebar (e.g., "What are the key trends?").**
-**View AI-generated insights and trend predictions.**
+2. Interact with the dashboard:
+   *   **Time Series Analysis**: Fetch historical stock data with various intervals.
+   *   **Price Prediction**: Get future price predictions using a simple linear regression model.
+   *   **Portfolio Optimizer**: Optimize your stock portfolio based on Sharpe Ratio.
+   *   **Symbol Search**: Search for stock symbols, forex pairs, crypto, and more.
+   *   **Company News**: Get AI-generated news insights for specific stock symbols.
+   *   **Charts**: Visualize stock data using static (Matplotlib) or interactive (Plotly) charts.
+   *   **WebSocket**: (Pro Plan Required) See a basic WebSocket data stream example.
+   *   **Debugging**: Access API usage statistics and generated API URLs for debugging.
 
 ---
 
 ## Key Components
 
 ### Data Ingestion
-* Fetch real-time stock data using Finnhub API.
+* Fetch real-time stock data using **Twelve Data API**.
 * Stream data into Apache Kafka for real-time processing.
 
 ### Data Storage & Processing
@@ -152,7 +164,7 @@ pip install -r requirements.txt
 * Monitor metrics with Prometheus and visualize logs with the ELK Stack.
 
 ### Generative AI User Interaction
-* Use LangChain to generate insights from unstructured data (e.g., news articles).
+* Use **Groq API** to generate insights from unstructured data (e.g., news articles).
 * Allow users to ask questions and receive AI-generated responses in the Streamlit dashboard.
 
 ---
