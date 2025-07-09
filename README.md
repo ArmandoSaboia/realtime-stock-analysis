@@ -109,6 +109,12 @@ realtime-stock-analysis/
    ```
    Replace `YOUR_..._KEY` with your actual API keys and passwords.
 
+   For Streamlit Cloud deployment, create a `.streamlit` directory in the root of your project and add a `config.toml` file inside it with the following content:
+   ```toml
+   [runner]
+   pythonPath = "src"
+   ```
+
    Build and run the Docker containers:
    ```bash
    docker-compose up --build -d
