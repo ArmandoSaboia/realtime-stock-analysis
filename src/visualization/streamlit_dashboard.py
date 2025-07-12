@@ -150,6 +150,10 @@ def handle_ai_analysis(groq_client_instance):
             st.warning("Please enter a stock ticker.")
             return
 
+        if td_client is None:
+            st.error("Twelve Data API Key is not provided. Please ensure TWELVEDATA_API_KEY is set in your environment.")
+            return
+
         if groq_client_instance is None:
             st.error("Groq API Key is not provided. Please enter your API key in the sidebar to use AI features.")
             return
@@ -189,6 +193,10 @@ def handle_prediction(groq_client_instance):
     days_to_predict = st.slider("Days to Predict", 7, 90, 30)
 
     if st.button("Predict Future Price"):
+        if td_client is None:
+            st.error("Twelve Data API Key is not provided. Please ensure TWELVEDATA_API_KEY is set in your environment.")
+            return
+
         if groq_client_instance is None:
             st.error("Groq API Key is not provided. Please enter your API key in the sidebar to use AI features.")
             return
@@ -238,6 +246,10 @@ def handle_correlation():
         st.warning("Please select at least two assets.")
         return
 
+    if td_client is None:
+        st.error("Twelve Data API Key is not provided. Please ensure TWELVEDATA_API_KEY is set in your environment.")
+        return
+
     with st.spinner("Fetching data and calculating correlations..."):
         try:
             all_data = {}
@@ -265,6 +277,10 @@ def handle_portfolio_optimizer():
     tickers = [t.strip().upper() for t in tickers_input.split(',')]
 
     if st.button("Optimize Portfolio"):
+        if td_client is None:
+            st.error("Twelve Data API Key is not provided. Please ensure TWELVEDATA_API_KEY is set in your environment.")
+            return
+
         with st.spinner("Fetching data and optimizing..."):
             try:
                 returns_data = {}
