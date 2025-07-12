@@ -20,7 +20,9 @@ load_dotenv()
 
 # Initialize API clients
 td_client = TDClient(apikey=os.getenv("TWELVEDATA_API_KEY"))
-groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+# Global variable for Groq client, initialized after user input
+groq_client = None
 
 
 # --- Custom Styling ---
@@ -76,12 +78,12 @@ def apply_custom_styling():
 # --- AI and Data Interpretation Functions ---
 
 @st.cache_data(ttl=3600) # Cache for 1 hour
-def get_stock_insights(query, model="llama3-8b-8192"):
+def get_stock_insights(groq_client_instance, query, model="llama3-8b-8192"):
     """Get AI-powered insights from Groq."""
-    if not os.getenv("GROQ_API_KEY"):
-        return "Error: GROQ_API_KEY not found. Please add it to your .env file."
+    if groq_client_instance is None:
+        return "Error: Groq API client not initialized. Please enter your API key."
     try:
-        chat_completion = groq_client.chat.completions.create(
+        chat_completion = groq_client_instance.chat.completions.create(
             messages=[
                 {
                     "role": "system",
@@ -97,7 +99,7 @@ def get_stock_insights(query, model="llama3-8b-8192"):
         return chat_completion.choices[0].message.content
     except Exception as e:
         st.error(f"Error fetching AI insights from Groq: {e}")
-        return "Could not generate AI insights due to an error."
+        return "Could not generate AI insights due to an error." 
 
 def interpret_change(change_val):
     """Interpret 30-day change value."""
@@ -138,7 +140,7 @@ def create_prediction_chart(historical_data, future_dates, future_prices, ticker
 
 # --- Page/Feature Handlers ---
 
-def handle_ai_analysis():
+def handle_ai_analysis(groq_client_instance):
     """Handler for the AI Stock Analysis page."""
     st.header(" AI-Powered Stock Analysis")
     ticker = st.text_input("Enter Stock Ticker for AI Analysis", "AAPL").upper()
@@ -146,6 +148,10 @@ def handle_ai_analysis():
     if st.button("Generate Analysis"):
         if not ticker:
             st.warning("Please enter a stock ticker.")
+            return
+
+        if groq_client_instance is None:
+            st.error("Groq API Key is not provided. Please enter your API key in the sidebar to use AI features.")
             return
 
         with st.spinner(f"Fetching data and generating analysis for {ticker}..."):
@@ -173,16 +179,20 @@ def handle_ai_analysis():
             
             # 4. Display results
             st.subheader(f"Analysis for {ticker}")
-            ai_insights = get_stock_insights(query)
+            ai_insights = get_stock_insights(groq_client_instance, query)
             st.markdown(ai_insights)
 
-def handle_prediction():
+def handle_prediction(groq_client_instance):
     """Handler for the Price Prediction page."""
     st.header(" Price Prediction")
     ticker = st.text_input("Enter Ticker for Prediction", "TSLA").upper()
     days_to_predict = st.slider("Days to Predict", 7, 90, 30)
 
     if st.button("Predict Future Price"):
+        if groq_client_instance is None:
+            st.error("Groq API Key is not provided. Please enter your API key in the sidebar to use AI features.")
+            return
+
         with st.spinner(f"Running prediction model for {ticker}..."):
             try:
                 # Fetch historical data
@@ -207,7 +217,7 @@ def handle_prediction():
                     f"\n- Predicted price in {days_to_predict} days: ${future_prices[-1]:.2f} ({price_change_pct:+.2f}%)"
                     f"\n- Discuss potential factors, risks, and opportunities for this prediction based on time-series forecasting."
                 )
-                insights = get_stock_insights(prediction_query)
+                insights = get_stock_insights(groq_client_instance, prediction_query)
                 st.subheader("AI Interpretation of Prediction")
                 st.markdown(insights)
 
@@ -324,6 +334,16 @@ def main():
     apply_custom_styling()
     st.title(" Real Time Stock Market Analysis")
 
+    st.sidebar.header("API Configuration")
+    groq_api_key = st.sidebar.text_input("Enter your Groq API Key", type="password")
+    
+    global groq_client
+    if groq_api_key:
+        groq_client = Groq(api_key=groq_api_key)
+    else:
+        st.sidebar.warning("Please enter your Groq API Key to enable AI features.")
+        groq_client = None # Ensure it's None if no key is provided
+
     st.sidebar.header("Navigation")
     app_mode = st.sidebar.radio(
         "Choose a feature",
@@ -337,9 +357,9 @@ def main():
     )
 
     if app_mode == "AI Stock Analysis":
-        handle_ai_analysis()
+        handle_ai_analysis(groq_client)
     elif app_mode == "Price Prediction":
-        handle_prediction()
+        handle_prediction(groq_client)
     elif app_mode == "Portfolio Optimizer":
         handle_portfolio_optimizer()
     elif app_mode == "Asset Correlation":
