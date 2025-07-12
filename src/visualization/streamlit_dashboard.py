@@ -578,8 +578,8 @@ def create_prediction_chart(historical_data, future_dates, future_prices, ticker
 def create_dashboard_header():
     st.markdown("""
     <div class="main-header">
-        <h1>Stock Market Analytics Dashboard</h1>
-        <p>Real-Time Market Overview & Analytics</p>
+        <h1>Real-Time Market Overview & Analytics</h1>
+        <p>Stock Market Analytics Dashboard</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -1060,7 +1060,7 @@ def create_enhanced_sidebar():
 # -- Main App Function --
 def main():
     st.set_page_config(
-        page_title="Stock Market Analytics Dashboard",
+        page_title="Real-Time Market Overview & Analytics",
         page_icon="📊",
         layout="wide",
         initial_sidebar_state="expanded"
@@ -1100,7 +1100,7 @@ def main():
     st.markdown("---")
     st.markdown(""" 
     <div style="text-align: center; color: #687280; font-size: 0.9rem;"> 
-        <strong>Stock Market Analytics Dashboard</strong> | Built with Python, Streamlit, Plotly & Groq |
+        <strong>Real-Time Market Overview & Analytics</strong> | Built with Python, Streamlit, Plotly & Groq |
         © 2025 Armando Saboia
     </div>
     """, unsafe_allow_html=True)
