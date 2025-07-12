@@ -27,9 +27,6 @@ POPULAR_SYMBOLS = [
 # -- Enhanced Custom Styling --
 def apply_enhanced_styling():
     st.markdown("""
-    # -- Enhanced Custom Styling --
-def apply_enhanced_styling():
-    st.markdown("""
     <style>
     /* FIX FOR SIDEBAR TOGGLE BUTTON */
     [data-testid="collapsedControl"] {
@@ -70,8 +67,8 @@ def apply_enhanced_styling():
         transform: scale(1.1);
         box-shadow: 0 0 0 2px white, 0 0 0 4px #667eea !important;
     }
-         
-    /* Import Google Fonts */
+    
+    /* Import Google Fonts in single line */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     
     /* Global Styles */
@@ -274,6 +271,21 @@ def apply_enhanced_styling():
         background: #5a67d8;
     }
     </style>
+    
+    <script>
+    // Ensure sidebar toggle button remains visible
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('[data-testid="collapsedControl"]')) {
+            setTimeout(() => {
+                const sidebar = document.querySelector('.st-emotion-cache-1cypcdb');
+                if (sidebar) {
+                    sidebar.style.transform = 'none';
+                    sidebar.style.left = '0px';
+                }
+            }, 100);
+        }
+    });
+    </script>
     """, unsafe_allow_html=True)
 
 # -- Technical Indicators Functions --
@@ -978,23 +990,7 @@ def main():
     )
     apply_enhanced_styling()
     create_enhanced_sidebar()
-
-    st.markdown("""
-<script>
-document.addEventListener('click', function(e) {
-    if (e.target.closest('[data-testid="collapsedControl"]')) {
-        setTimeout(() => {
-            const sidebar = document.querySelector('.st-emotion-cache-1cypcdb');
-            if (sidebar) {
-                sidebar.style.transform = 'none';
-                sidebar.style.left = '0px';
-            }
-        }, 100);
-    }
-});
-</script>
-""", unsafe_allow_html=True)
-    
+       
     td_client_instance = st.session_state.get('td_client')
     groq_client_instance = st.session_state.get('groq_client')
     
