@@ -27,287 +27,300 @@ POPULAR_SYMBOLS = [
 # -- Enhanced Custom Styling --
 def apply_enhanced_styling():
     st.markdown("""
-    <style>
-    /* FIX FOR SIDEBAR TOGGLE BUTTON - ENHANCED VERSION */
-    [data-testid="collapsedControl"] {
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        position: fixed !important;
-        left: 0 !important;
-        top: 2rem !important;
-        z-index: 9999 !important;
-        width: auto !important;
-        height: auto !important;
-        transform: none !important;
-        transition: none !important;
-    }
-    
-    [data-testid="collapsedControl"] button {
-        background-color: rgba(102, 126, 234, 0.9) !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 0 50% 50% 0 !important;
-        width: 2rem !important;
-        height: 2rem !important;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important;
-        transition: all 0.3s ease !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        cursor: pointer !important;
-    }
-    
-    [data-testid="collapsedControl"] button:hover {
-        background-color: #667eea !important;
-        transform: scale(1.1) !important;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important;
-    }
-    
-    [data-testid="collapsedControl"] button svg {
-        width: 1.2rem !important;
-        height: 1.2rem !important;
-        stroke: white !important;
-        fill: none !important;
-    }
-    
-    /* Ensure button is always visible when sidebar is collapsed */
-    .stApp[data-collapsed="true"] [data-testid="collapsedControl"],
-    .stApp:not([data-collapsed]) [data-testid="collapsedControl"] {
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        position: fixed !important;
-        left: 0 !important;
-        top: 2rem !important;
-        z-index: 9999 !important;
-    }
-    
-    /* Make button more prominent when sidebar is collapsed */
-    .stApp[data-collapsed="true"] [data-testid="collapsedControl"] button {
-        background-color: #667eea !important;
-        transform: scale(1.05) !important;
-        box-shadow: 0 0 0 2px white, 0 0 0 4px #667eea, 0 4px 15px rgba(0,0,0,0.3) !important;
-    }
-    
-    /* Additional fallback for collapsed state */
-    .css-1d391kg, .css-1cypcdb {
-        position: relative !important;
-    }
-    
-    /* Ensure main content doesn't overlap with toggle button */
-    .main .block-container {
-        padding-left: 1rem !important;
-    }
-    
-    /* Import Google Fonts in single line */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    
-    /* Global Styles */
-    .main .block-container {
-        padding-top: 1rem;
-        padding-bottom: 2rem;
-        max-width: 1200px;
-    }
-    
-    /* Custom Font */
-    html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
-    }
-    
-    /* Header Styles */
-    .main-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 2rem;
-        border-radius: 15px;
-        margin-bottom: 2rem;
-        text-align: center;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    }
-    
-    .main-header h1 {
-        color: white;
-        font-size: 2.5rem;
-        font-weight: 700;
-        margin: 0;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-    }
-    
-    .main-header p {
-        color: rgba(255,255,255,0.9);
-        font-size: 1.1rem;
-        margin: 0.5rem 0 0 0;
-    }
-    
-    /* Enhanced Metric Cards */
-    .metric-card {
-        background: white;
-        border-radius: 15px;
-        padding: 1.5rem;
-        margin: 0.5rem;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        border: 1px solid rgba(0,0,0,0.05);
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .metric-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    }
-    
-    .metric-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, #667eea, #764ba2);
-    }
-    
-    .metric-title {
-        font-size: 0.9rem;
-        font-weight: 500;
-        color: #687280;
-        margin-bottom: 0.5rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    
-    .metric-value {
-        font-size: 2.2rem;
-        font-weight: 700;
-        margin-bottom: 0.5rem;
-    }
-    
-    .metric-change {
-        font-size: 0.9rem;
-        font-weight: 500;
-        padding: 0.25rem 0.5rem;
-        border-radius: 20px;
-        display: inline-block;
-    }
-    
-    .positive { color: #108981; background: rgba(16,185,129,0.1); }
-    .negative { color: #EF4444; background: rgba(239,68,68,0.1); }
-    .neutral { color: #6B7280; background: rgba(107,114,128,0.1); }
-    
-    /* Old metric container styles for compatibility */
-    .metric-container {
-        background: #F8FAFC;
-        border-radius: 10px;
-        padding: 1rem;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        text-align: center;
-    }
-    .metric-container:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    }
-    .metric-label {
-        font-size: 0.9rem;
-        color: #687280;
-        font-weight: 500;
-    }
-    .metric-value {
-        font-size: 1.8rem;
-        font-weight: 600;
-        color: #1E3A8A;
-        margin: 0.3rem 0;
-    }
-    .indicator-positive {
-        color: #22C55E;
-    }
-    .indicator-negative {
-        color: #EF4444;
-    }
-    .indicator-neutral {
-        color: #687280;
-    }
-    
-    /* Status Badges */
-    .status-badge {
-        padding: 0.5rem 1rem;
-        border-radius: 25px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        display: inline-block;
-        margin: 0.25rem;
-    }
-    
-    .status-connected { background: #108981; color: white; }
-    .status-disconnected { background: #EF4444; color: white; }
-    .status-loading { background: #F59E0B; color: white; }
-    
-    /* Alert Boxes */
-    .alert {
-        padding: 1rem;
-        border-radius: 10px;
-        margin: 1rem 0;
-        border-left: 4px solid;
-    }
-    
-    .alert-success {
-        background: rgba(16,185,129,0.1);
-        border-left-color: #108981;
-        color: #065446;
-    }
-    
-    .alert-warning {
-        background: rgba(245,158,11,0.1);
-        border-left-color: #F59E0B;
-        color: #92400e;
-    }
-    
-    .alert-error {
-        background: rgba(239,68,68,0.1);
-        border-left-color: #EF4444;
-        color: #991b1b;
-    }
-    
-    /* Chart Container */
-    .chart-container {
-        background: white;
-        border-radius: 15px;
-        padding: 1.5rem;
-        margin: 1rem 0;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-    }
-    
-    /* Hide default Streamlit elements */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    
-    /* Custom scrollbar */
-    ::-webkit-scrollbar {
-        width: 8px;
-    }
-    
-    ::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 10px;
-    }
-    
-    ::-webkit-scrollbar-thumb {
-        background: #667eea;
-        border-radius: 10px;
-    }
-    
-    ::-webkit-scrollbar-thumb:hover {
-        background: #5a67d8;
-    }
-    </style>
-    
-    <script>
-    // Enhanced sidebar toggle button visibility management
-    function ensureToggleButtonVisible() {
-        const toggleButton = document.querySelector('[data-testid="collapsedControl"]');
+<style>
+/* Fix for Sidebar Toggle Button */
+[data-testid="stSidebarCollapseButton"] {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: fixed !important;
+    left: 0 !important;
+    top: 2rem !important;
+    z-index: 9999 !important;
+    width: auto !important;
+    height: auto !important;
+    transform: none !important;
+}
+
+/* Style the button */
+[data-testid="stSidebarCollapseButton"] button {
+    background-color: rgba(102, 126, 234, 0.9) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 0 50% 50% 0 !important;
+    width: 2rem !important;
+    height: 2rem !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important;
+    transition: all 0.3s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+}
+
+/* Hover effect */
+[data-testid="stSidebarCollapseButton"] button:hover {
+    background-color: #667eea !important;
+    transform: scale(1.1) !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important;
+}
+
+/* Hide default Streamlit icon */
+[data-testid="stSidebarCollapseButton"] button span[data-testid="stIconMaterial"] {
+    display: none !important;
+}
+
+/* Add custom arrow for expanded state (left arrow to collapse) */
+.stApp:not([data-collapsed]) [data-testid="stSidebarCollapseButton"] button::before {
+    content: '←' !important;
+    font-size: 1.2rem !important;
+    color: white !important;
+    font-family: 'Inter', sans-serif !important;
+}
+
+/* Add custom arrow for collapsed state (right arrow to expand) */
+.stApp[data-collapsed="true"] [data-testid="stSidebarCollapseButton"] button::before {
+    content: '→' !important;
+    font-size: 1.2rem !important;
+    color: white !important;
+    font-family: 'Inter', sans-serif !important;
+}
+
+/* Ensure button is visible in both states */
+.stApp[data-collapsed="true"] [data-testid="stSidebarCollapseButton"],
+.stApp:not([data-collapsed]) [data-testid="stSidebarCollapseButton"] {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: fixed !important;
+    left: 0 !important;
+    top: 2rem !important;
+    z-index: 9999 !important;
+}
+
+/* Enhance button appearance when sidebar is collapsed */
+.stApp[data-collapsed="true"] [data-testid="stSidebarCollapseButton"] button {
+    background-color: #667eea !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 0 0 2px white, 0 0 0 4px #667eea, 0 4px 15px rgba(0,0,0,0.3) !important;
+}
+
+/* Ensure sidebar container doesn't hide the button */
+.css-1d391kg, .css-1cypcdb {
+    position: relative !important;
+}
+
+/* Prevent main content from overlapping with toggle button */
+.main .block-container {
+    padding-left: 1rem !important;
+}
+
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Global Styles */
+.main .block-container {
+    padding-top: 1rem;
+    padding-bottom: 2rem;
+    max-width: 1200px;
+}
+
+/* Custom Font */
+html, body, [class*="css"] {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Header Styles */
+.main-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 2rem;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.main-header h1 {
+    color: white;
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.main-header p {
+    color: rgba(255,255,255,0.9);
+    font-size: 1.1rem;
+    margin: 0.5rem 0 0 0;
+}
+
+/* Enhanced Metric Cards */
+.metric-card {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin: 0.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border: 1px solid rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.metric-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+}
+
+.metric-title {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #687280;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.metric-value {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.metric-change {
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 0.25rem 0.5rem;
+    border-radius: 20px;
+    display: inline-block;
+}
+
+.positive { color: #108981; background: rgba(16,185,129,0.1); }
+.negative { color: #EF4444; background: rgba(239,68,68,0.1); }
+.neutral { color: #6B7280; background: rgba(107,114,128,0.1); }
+
+/* Old metric container styles for compatibility */
+.metric-container {
+    background: #F8FAFC;
+    border-radius: 10px;
+    padding: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    text-align: center;
+}
+
+.metric-container:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.metric-label {
+    font-size: 0.9rem;
+    color: #687280;
+    font-weight: 500;
+}
+
+.metric-value {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #1E3A8A;
+    margin: 0.3rem 0;
+}
+
+.indicator-positive { color: #22C55E; }
+.indicator-negative { color: #EF4444; }
+.indicator-neutral { color: #687280; }
+
+/* Status Badges */
+.status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-block;
+    margin: 0.25rem;
+}
+
+.status-connected { background: #108981; color: white; }
+.status-disconnected { background: #EF4444; color: white; }
+.status-loading { background: #F59E0B; color: white; }
+
+/* Alert Boxes */
+.alert {
+    padding: 1rem;
+    border-radius: 10px;
+    margin: 1rem 0;
+    border-left: 4px solid;
+}
+
+.alert-success {
+    background: rgba(16,185,129,0.1);
+    border-left-color: #108981;
+    color: #065446;
+}
+
+.alert-warning {
+    background: rgba(245,158,11,0.1);
+    border-left-color: #F59E0B;
+    color: #92400e;
+}
+
+.alert-error {
+    background: rgba(239,68,68,0.1);
+    border-left-color: #EF4444;
+    color: #991b1b;
+}
+
+/* Chart Container */
+.chart-container {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin: 1rem 0;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+/* Hide default Streamlit elements */
+#MainMenu { visibility: hidden; }
+footer { visibility: hidden; }
+header { visibility: hidden; }
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #667eea;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #5a67d8;
+}
+</style>
+<script>
+// Ensure sidebar toggle button remains visible and functional
+document.addEventListener('DOMContentLoaded', function() {
+    const ensureToggleButtonVisible = () => {
+        const toggleButton = document.querySelector('[data-testid="stSidebarCollapseButton"]');
         if (toggleButton) {
             toggleButton.style.display = 'block';
             toggleButton.style.visibility = 'visible';
@@ -318,42 +331,39 @@ def apply_enhanced_styling():
             toggleButton.style.zIndex = '9999';
             toggleButton.style.transform = 'none';
         }
-    }
-    
-    // Run on page load
-    document.addEventListener('DOMContentLoaded', ensureToggleButtonVisible);
-    
-    // Run when page changes (for Streamlit rerun)
-    window.addEventListener('load', ensureToggleButtonVisible);
-    
-    // Observe for changes in the DOM
-    const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
+    };
+
+    // Run initially
+    ensureToggleButtonVisible();
+
+    // Run on click events
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('[data-testid="stSidebarCollapseButton"]')) {
+            setTimeout(ensureToggleButtonVisible, 150);
+        }
+    });
+
+    // Observe DOM changes
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
             if (mutation.type === 'childList' || mutation.type === 'attributes') {
-                setTimeout(ensureToggleButtonVisible, 100);
+                ensureToggleButtonVisible();
             }
         });
     });
-    
-    // Start observing
+
     observer.observe(document.body, {
         childList: true,
         subtree: true,
         attributes: true,
         attributeFilter: ['data-collapsed', 'style', 'class']
     });
-    
-    // Handle sidebar toggle clicks
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('[data-testid="collapsedControl"]')) {
-            setTimeout(ensureToggleButtonVisible, 150);
-        }
-    });
-    
-    // Periodic check to ensure button remains visible
-    setInterval(ensureToggleButtonVisible, 2000);
-    </script>
-    """, unsafe_allow_html=True)
+
+    // Periodic check for Streamlit reruns
+    setInterval(ensureToggleButtonVisible, 1000);
+});
+</script>
+""", unsafe_allow_html=True)
 
 # -- Technical Indicators Functions --
 def calculate_sma(data, window):
@@ -1090,7 +1100,7 @@ def main():
     st.markdown("---")
     st.markdown(""" 
     <div style="text-align: center; color: #687280; font-size: 0.9rem;"> 
-        <strong>Stock Market Analytics Dashboard</strong> | Built with Python, Streamlit, Plotly & Grok |
+        <strong>Stock Market Analytics Dashboard</strong> | Built with Python, Streamlit, Plotly & Groq |
         © 2025 Armando Saboia
     </div>
     """, unsafe_allow_html=True)
