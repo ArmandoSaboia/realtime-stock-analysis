@@ -62,3 +62,4 @@ transformers
 plotly
 scikit-learn
 mplfinance
+statsmodels
