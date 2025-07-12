@@ -27,35 +27,50 @@ POPULAR_SYMBOLS = [
 # -- Enhanced Custom Styling --
 def apply_enhanced_styling():
     st.markdown("""
+    # -- Enhanced Custom Styling --
+def apply_enhanced_styling():
+    st.markdown("""
     <style>
     /* FIX FOR SIDEBAR TOGGLE BUTTON */
     [data-testid="collapsedControl"] {
-        display: block;
-        visibility: visible;
-        opacity: 1;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        left: 0 !important;
+        top: 2rem !important;
+        z-index: 1000 !important;
     }
     
     [data-testid="collapsedControl"] button {
-        background-color: rgba(102, 126, 234, 0.7) !important;
+        background-color: rgba(102, 126, 234, 0.9) !important;
         color: white !important;
         border: none !important;
-        left: 0 !important;
-        top: 2rem !important;
         border-radius: 0 50% 50% 0 !important;
         width: 1.8rem !important;
         height: 1.8rem !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important;
+        transition: all 0.3s ease !important;
     }
     
     [data-testid="collapsedControl"] button:hover {
         background-color: #667eea !important;
-        transform: scale(1.1);
+        transform: scale(1.2) !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important;
     }
     
     [data-testid="collapsedControl"] button svg {
         width: 1.2rem !important;
         height: 1.2rem !important;
+        stroke: white !important;
     }
     
+    /* Make button more visible when sidebar is collapsed */
+    .stApp[data-collapsed="true"] [data-testid="collapsedControl"] button {
+        background-color: #667eea !important;
+        transform: scale(1.1);
+        box-shadow: 0 0 0 2px white, 0 0 0 4px #667eea !important;
+    }
+         
     /* Import Google Fonts */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     
@@ -963,6 +978,22 @@ def main():
     )
     apply_enhanced_styling()
     create_enhanced_sidebar()
+
+    st.markdown("""
+<script>
+document.addEventListener('click', function(e) {
+    if (e.target.closest('[data-testid="collapsedControl"]')) {
+        setTimeout(() => {
+            const sidebar = document.querySelector('.st-emotion-cache-1cypcdb');
+            if (sidebar) {
+                sidebar.style.transform = 'none';
+                sidebar.style.left = '0px';
+            }
+        }, 100);
+    }
+});
+</script>
+""", unsafe_allow_html=True)
     
     td_client_instance = st.session_state.get('td_client')
     groq_client_instance = st.session_state.get('groq_client')
