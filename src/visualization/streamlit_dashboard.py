@@ -28,6 +28,34 @@ POPULAR_SYMBOLS = [
 def apply_enhanced_styling():
     st.markdown("""
     <style>
+    /* FIX FOR SIDEBAR TOGGLE BUTTON */
+    [data-testid="collapsedControl"] {
+        display: block;
+        visibility: visible;
+        opacity: 1;
+    }
+    
+    [data-testid="collapsedControl"] button {
+        background-color: rgba(102, 126, 234, 0.7) !important;
+        color: white !important;
+        border: none !important;
+        left: 0 !important;
+        top: 2rem !important;
+        border-radius: 0 50% 50% 0 !important;
+        width: 1.8rem !important;
+        height: 1.8rem !important;
+    }
+    
+    [data-testid="collapsedControl"] button:hover {
+        background-color: #667eea !important;
+        transform: scale(1.1);
+    }
+    
+    [data-testid="collapsedControl"] button svg {
+        width: 1.2rem !important;
+        height: 1.2rem !important;
+    }
+    
     /* Import Google Fonts */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     
