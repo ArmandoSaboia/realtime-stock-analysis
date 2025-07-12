@@ -19,7 +19,6 @@ from statsmodels.tsa.arima.model import ARIMA
 load_dotenv()
 
 # Initialize API clients
-# NOTE: Ensure TWELVEDATA_API_KEY and GROQ_API_KEY are in your .env file
 td_client = TDClient(apikey=os.getenv("TWELVEDATA_API_KEY"))
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
