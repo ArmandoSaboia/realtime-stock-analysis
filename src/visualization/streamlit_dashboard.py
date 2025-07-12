@@ -12,21 +12,20 @@ from datetime import datetime, timedelta
 from sklearn.linear_model import LinearRegression
 import time
 
-# Ensure the project root is in sys.path
-root_dir = Path(__file__).resolve().parent.parent
-if str(root_dir) not in sys.path:
-    sys.path.append(str(root_dir))
+# Add the project root to sys.path for module resolution
+script_dir = Path(__file__).resolve().parent
+project_root = script_dir.parent.parent # Adjust this if your project structure is different
 
-# Configure environment
-os.environ['PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION'] = 'python'
-os.environ['TOKENIZERS_PARALLELISM'] = 'false'
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+# Debugging prints (can be removed after verification)
+print(f"Script directory: {script_dir}")
+print(f"Project root added to sys.path: {project_root}")
+print(f"Current sys.path: {sys.path}")
 
 # Initialize API clients
-from src.data_ingestion.stock_apis import TwelveDataAPI
+from data_ingestion.stock_apis import TwelveDataAPI
 twelvedata_client = TwelveDataAPI()
 
 # Global model instance

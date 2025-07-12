@@ -1,7 +1,7 @@
 import streamlit as st
 from llama_index.core import SimpleDirectoryReader, GPTListIndex
 from langchain_groq import ChatGroq
-from src.genai.config import config
+from genai.config import config
 
 def generate_insights(query):
     # For now, we'll use a dummy directory reader. In a real scenario, this would load actual data.

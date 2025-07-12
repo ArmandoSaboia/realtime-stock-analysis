@@ -2,4 +2,6 @@ FROM realtime-stock-analysis-base
 
 WORKDIR /app
 
-CMD ["streamlit", "run", "src/visualization/streamlit_dashboard.py", "--server.port=8501", "--server.address=0.0.0.0"]
+COPY . /app/
+
+CMD ["bash", "-c", "streamlit run src/visualization/streamlit_dashboard.py --server.port=8501 --server.address=0.0.0.0"]
