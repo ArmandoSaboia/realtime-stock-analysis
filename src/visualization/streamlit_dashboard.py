@@ -33,7 +33,7 @@ def apply_enhanced_styling():
         display: block !important;
         visibility: visible !important;
         opacity: 1 !important;
-        left: 0 !important;
+        left: 1 !important;
         top: 2rem !important;
         z-index: 1000 !important;
     }
