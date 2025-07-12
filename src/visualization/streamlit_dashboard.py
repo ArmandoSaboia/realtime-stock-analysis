@@ -968,8 +968,8 @@ def main():
     st.markdown("---")
     st.markdown(""" 
     <div style="text-align: center; color: #687280; font-size: 0.9rem;"> 
-        <strong>Stock Market Analytics Dashboard</strong> | Built with Streamlit, Plotly & AI |
-        © 2024 Financial Analytics Inc.
+        <strong>Stock Market Analytics Dashboard</strong> | Built with Python, Streamlit, Plotly & Grok |
+        © 2025 Armando Saboia
     </div>
     """, unsafe_allow_html=True)
 
