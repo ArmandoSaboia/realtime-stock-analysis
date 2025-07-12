@@ -336,12 +336,23 @@ def handle_market_data_browser(td_client_instance):
     if st.button("Get List"):
         with st.spinner("Fetching list..."):
             try:
-                if list_choice == "Stocks": data = td_client_instance.get_stocks_list().as_pandas()
-                elif list_choice == "ETFs": data = td_client_instance.get_etf_list().as_pandas()
-                elif list_choice == "Indices": data = td_client_instance.get_indices_list().as_pandas()
-                elif list_choice == "Forex Pairs": data = td_client_instance.get_forex_pairs_list().as_pandas()
-                elif list_choice == "Cryptocurrencies": data = td_client_instance.get_cryptocurrencies_list().as_pandas()
-                st.dataframe(data)
+                if list_choice == "Stocks": raw_data = td_client_instance.get_stocks_list().as_json()
+                elif list_choice == "ETFs": raw_data = td_client_instance.get_etf_list().as_json()
+                elif list_choice == "Indices": raw_data = td_client_instance.get_indices_list().as_json()
+                elif list_choice == "Forex Pairs": raw_data = td_client_instance.get_forex_pairs_list().as_json()
+                elif list_choice == "Cryptocurrencies": raw_data = td_client_instance.get_cryptocurrencies_list().as_json()
+                
+                st.write("Raw JSON Data:")
+                st.json(raw_data)
+
+                if raw_data and isinstance(raw_data, list):
+                    data = pd.DataFrame(raw_data)
+                    st.dataframe(data)
+                elif raw_data and isinstance(raw_data, dict) and "data" in raw_data and isinstance(raw_data["data"], list):
+                    data = pd.DataFrame(raw_data["data"])
+                    st.dataframe(data)
+                else:
+                    st.warning("Unexpected data format received.")
             except Exception as e:
                 st.error(f"Failed to fetch list: {e}")
 
