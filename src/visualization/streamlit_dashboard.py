@@ -19,7 +19,7 @@ from statsmodels.tsa.arima.model import ARIMA
 load_dotenv()
 
 # Initialize API clients
-td_client = None
+td_client = TDClient(apikey=os.getenv("TWELVEDATA_API_KEY"))
 
 # Global variable for Groq client, initialized after user input
 groq_client = None
@@ -140,7 +140,7 @@ def create_prediction_chart(historical_data, future_dates, future_prices, ticker
 
 # --- Page/Feature Handlers ---
 
-def handle_ai_analysis(td_client_instance, groq_client_instance):
+def handle_ai_analysis(groq_client_instance):
     """Handler for the AI Stock Analysis page."""
     st.header(" AI-Powered Stock Analysis")
     ticker = st.text_input("Enter Stock Ticker for AI Analysis", "AAPL").upper()
@@ -150,10 +150,6 @@ def handle_ai_analysis(td_client_instance, groq_client_instance):
             st.warning("Please enter a stock ticker.")
             return
 
-        if td_client_instance is None:
-            st.error("Twelve Data API Key is not provided. Please enter your API key in the sidebar to fetch market data.")
-            return
-
         if groq_client_instance is None:
             st.error("Groq API Key is not provided. Please enter your API key in the sidebar to use AI features.")
             return
@@ -161,7 +157,7 @@ def handle_ai_analysis(td_client_instance, groq_client_instance):
         with st.spinner(f"Fetching data and generating analysis for {ticker}..."):
             # 1. Fetch data from Twelve Data
             try:
-                ts = td_client_instance.time_series(symbol=ticker, interval="1day", outputsize=90).as_pandas().sort_index(ascending=True)
+                ts = td_client.time_series(symbol=ticker, interval="1day", outputsize=90).as_pandas().sort_index(ascending=True)
             except Exception as e:
                 st.error(f"Failed to fetch time series data for {ticker} from Twelve Data: {e}")
                 return
@@ -186,17 +182,13 @@ def handle_ai_analysis(td_client_instance, groq_client_instance):
             ai_insights = get_stock_insights(groq_client_instance, query)
             st.markdown(ai_insights)
 
-def handle_prediction(td_client_instance, groq_client_instance):
+def handle_prediction(groq_client_instance):
     """Handler for the Price Prediction page."""
     st.header(" Price Prediction")
     ticker = st.text_input("Enter Ticker for Prediction", "TSLA").upper()
     days_to_predict = st.slider("Days to Predict", 7, 90, 30)
 
     if st.button("Predict Future Price"):
-        if td_client_instance is None:
-            st.error("Twelve Data API Key is not provided. Please enter your API key in the sidebar to fetch market data.")
-            return
-
         if groq_client_instance is None:
             st.error("Groq API Key is not provided. Please enter your API key in the sidebar to use AI features.")
             return
@@ -204,7 +196,7 @@ def handle_prediction(td_client_instance, groq_client_instance):
         with st.spinner(f"Running prediction model for {ticker}..."):
             try:
                 # Fetch historical data
-                hist_data = td_client_instance.time_series(symbol=ticker, interval="1day", outputsize=200).as_pandas().sort_index(ascending=True)
+                hist_data = td_client.time_series(symbol=ticker, interval="1day", outputsize=200).as_pandas().sort_index(ascending=True)
                 
                 # Simple ARIMA model for simulation
                 model = ARIMA(hist_data['close'], order=(5,1,0))
@@ -232,7 +224,7 @@ def handle_prediction(td_client_instance, groq_client_instance):
             except Exception as e:
                 st.error(f"Could not generate prediction: {e}")
 
-def handle_correlation(td_client_instance):
+def handle_correlation():
     """Handler for the Asset Correlation page."""
     st.header(" Asset Correlation Matrix")
     available_assets = ['SPY', 'QQQ', 'DIA', 'AAPL', 'MSFT', 'GOOG', 'AMZN', 'TSLA', 'META', 'NVDA', 'BTC/USD', 'ETH/USD']
@@ -246,16 +238,12 @@ def handle_correlation(td_client_instance):
         st.warning("Please select at least two assets.")
         return
 
-    if td_client_instance is None:
-        st.error("Twelve Data API Key is not provided. Please enter your API key in the sidebar to fetch market data.")
-        return
-
     with st.spinner("Fetching data and calculating correlations..."):
         try:
             all_data = {}
             for asset in selected_assets:
                 # Fetch 90 days of data for correlation
-                ts = td_client_instance.time_series(symbol=asset, interval="1day", outputsize=90).as_pandas()
+                ts = td_client.time_series(symbol=asset, interval="1day", outputsize=90).as_pandas()
                 all_data[asset] = ts['close']
             
             price_df = pd.DataFrame(all_data)
@@ -268,7 +256,7 @@ def handle_correlation(td_client_instance):
         except Exception as e:
             st.error(f"Could not calculate correlations: {e}")
 
-def handle_portfolio_optimizer(td_client_instance):
+def handle_portfolio_optimizer():
     """Handler for the Portfolio Optimizer page."""
     st.header("⚖️ Portfolio Optimizer")
     st.write("This tool is for demonstration purposes and uses simplified assumptions.")
@@ -277,15 +265,11 @@ def handle_portfolio_optimizer(td_client_instance):
     tickers = [t.strip().upper() for t in tickers_input.split(',')]
 
     if st.button("Optimize Portfolio"):
-        if td_client_instance is None:
-            st.error("Twelve Data API Key is not provided. Please enter your API key in the sidebar to fetch market data.")
-            return
-
         with st.spinner("Fetching data and optimizing..."):
             try:
                 returns_data = {}
                 for ticker in tickers:
-                    ts = td_client_instance.time_series(symbol=ticker, interval="1day", outputsize=252).as_pandas()
+                    ts = td_client.time_series(symbol=ticker, interval="1day", outputsize=252).as_pandas()
                     returns_data[ticker] = ts['close'].pct_change()
                 
                 returns_df = pd.DataFrame(returns_data).dropna()
@@ -314,20 +298,16 @@ def handle_portfolio_optimizer(td_client_instance):
             except Exception as e:
                 st.error(f"Could not optimize portfolio: {e}")
 
-def handle_market_data_browser(td_client_instance):
+def handle_market_data_browser():
     """Handler for browsing market data like lists, fundamentals, etc."""
     st.header(" Market Data Browser")
     
-    if td_client_instance is None:
-        st.error("Twelve Data API Key is not provided. Please enter your API key in the sidebar to fetch market data.")
-        return
-
     # Corrected method name to .search() which is standard in the library
     st.subheader("Symbol Search")
     query = st.text_input("Enter search query (e.g., 'Apple', 'Micro')", "Apple")
     if st.button("Search Symbols"):
         try:
-            results = td_client_instance.search(symbol=query).as_json()
+            results = td_client.search(symbol=query).as_json()
             st.json(results)
         except Exception as e:
             st.error(f"An error occurred during symbol search: {e}")
@@ -337,11 +317,11 @@ def handle_market_data_browser(td_client_instance):
     if st.button("Get List"):
         with st.spinner("Fetching list..."):
             try:
-                if list_choice == "Stocks": data = td_client_instance.get_stocks_list().as_pandas()
-                elif list_choice == "ETFs": data = td_client_instance.get_etf_list().as_pandas()
-                elif list_choice == "Indices": data = td_client_instance.get_indices_list().as_pandas()
-                elif list_choice == "Forex Pairs": data = td_client_instance.get_forex_pairs_list().as_pandas()
-                elif list_choice == "Cryptocurrencies": data = td_client_instance.get_cryptocurrencies_list().as_pandas()
+                if list_choice == "Stocks": data = td_client.get_stocks_list().as_pandas()
+                elif list_choice == "ETFs": data = td_client.get_etf_list().as_pandas()
+                elif list_choice == "Indices": data = td_client.get_indices_list().as_pandas()
+                elif list_choice == "Forex Pairs": data = td_client.get_forex_pairs_list().as_pandas()
+                elif list_choice == "Cryptocurrencies": data = td_client.get_cryptocurrencies_list().as_pandas()
                 st.dataframe(data)
             except Exception as e:
                 st.error(f"Failed to fetch list: {e}")
@@ -355,16 +335,8 @@ def main():
     st.title(" Real Time Stock Market Analysis")
 
     st.sidebar.header("API Configuration")
-    twelvedata_api_key = st.sidebar.text_input("Enter your Twelve Data API Key", type="password")
     groq_api_key = st.sidebar.text_input("Enter your Groq API Key", type="password")
     
-    global td_client
-    if twelvedata_api_key:
-        td_client = TDClient(apikey=twelvedata_api_key)
-    else:
-        st.sidebar.warning("Please enter your Twelve Data API Key to fetch market data.")
-        td_client = None
-
     global groq_client
     if groq_api_key:
         groq_client = Groq(api_key=groq_api_key)
@@ -385,15 +357,15 @@ def main():
     )
 
     if app_mode == "AI Stock Analysis":
-        handle_ai_analysis(td_client, groq_client)
+        handle_ai_analysis(groq_client)
     elif app_mode == "Price Prediction":
-        handle_prediction(td_client, groq_client)
+        handle_prediction(groq_client)
     elif app_mode == "Portfolio Optimizer":
-        handle_portfolio_optimizer(td_client)
+        handle_portfolio_optimizer()
     elif app_mode == "Asset Correlation":
-        handle_correlation(td_client)
+        handle_correlation()
     elif app_mode == "Market Data Browser":
-        handle_market_data_browser(td_client)
+        handle_market_data_browser()
 
 
 if __name__ == "__main__":
