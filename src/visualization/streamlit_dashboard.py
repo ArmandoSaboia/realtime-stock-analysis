@@ -34,12 +34,33 @@ def apply_enhanced_styling():
     visibility: visible !important;
     opacity: 1 !important;
     position: fixed !important;
+    top: 2rem !important;
+    z-index: 10000 !important;
+    width: 2rem !important;
+    height: 2rem !important;
+    transform: none !important;
+    transition: left 0.3s ease !important;
+}
+
+/* Adjust button position based on sidebar state */
+.stApp:not([data-collapsed]) [data-testid="stSidebarCollapseButton"] {
+    left: 16rem !important; /* Adjusted for expanded sidebar width */
+}
+
+.stApp[data-collapsed="true"] [data-testid="stSidebarCollapseButton"] {
+    left: 0 !important; /* Flush with edge when collapsed */
+}
+
+/* Handle full-screen mode */
+.stApp[style*="width: 100vw"] [data-testid="stSidebarCollapseButton"],
+.stApp[style*="width:100vw"] [data-testid="stSidebarCollapseButton"] {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: fixed !important;
     left: 0 !important;
     top: 2rem !important;
-    z-index: 9999 !important;
-    width: auto !important;
-    height: auto !important;
-    transform: none !important;
+    z-index: 10000 !important;
 }
 
 /* Style the button */
@@ -86,33 +107,24 @@ def apply_enhanced_styling():
     font-family: 'Inter', sans-serif !important;
 }
 
-/* Ensure button is visible in both states */
-.stApp[data-collapsed="true"] [data-testid="stSidebarCollapseButton"],
-.stApp:not([data-collapsed]) [data-testid="stSidebarCollapseButton"] {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    position: fixed !important;
-    left: 0 !important;
-    top: 2rem !important;
-    z-index: 9999 !important;
+/* Ensure parent containers don't hide the button */
+[data-testid="stSidebar"],
+.css-1d391kg,
+.css-1cypcdb,
+.stSidebar {
+    overflow: visible !important;
+    position: relative !important;
 }
 
 /* Enhance button appearance when sidebar is collapsed */
 .stApp[data-collapsed="true"] [data-testid="stSidebarCollapseButton"] button {
     background-color: #667eea !important;
-    transform: scale(1.05) !important;
     box-shadow: 0 0 0 2px white, 0 0 0 4px #667eea, 0 4px 15px rgba(0,0,0,0.3) !important;
-}
-
-/* Ensure sidebar container doesn't hide the button */
-.css-1d391kg, .css-1cypcdb {
-    position: relative !important;
 }
 
 /* Prevent main content from overlapping with toggle button */
 .main .block-container {
-    padding-left: 1rem !important;
+    padding-left: 2.5rem !important;
 }
 
 /* Import Google Fonts */
@@ -321,15 +333,25 @@ header { visibility: hidden; }
 document.addEventListener('DOMContentLoaded', function() {
     const ensureToggleButtonVisible = () => {
         const toggleButton = document.querySelector('[data-testid="stSidebarCollapseButton"]');
-        if (toggleButton) {
+        const app = document.querySelector('.stApp');
+        if (toggleButton && app) {
+            // Force visibility and positioning
             toggleButton.style.display = 'block';
             toggleButton.style.visibility = 'visible';
             toggleButton.style.opacity = '1';
             toggleButton.style.position = 'fixed';
-            toggleButton.style.left = '0px';
             toggleButton.style.top = '2rem';
-            toggleButton.style.zIndex = '9999';
+            toggleButton.style.zIndex = '10000';
             toggleButton.style.transform = 'none';
+            // Dynamically adjust left position based on sidebar state
+            toggleButton.style.left = app.dataset.collapsed === 'true' ? '0px' : '16rem';
+            // Ensure parent doesn't hide it
+            const sidebar = document.querySelector('[data-testid="stSidebar"]');
+            if (sidebar) {
+                sidebar.style.overflow = 'visible';
+            }
+        } else {
+            console.warn('Toggle button or .stApp not found');
         }
     };
 
@@ -339,11 +361,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Run on click events
     document.addEventListener('click', function(e) {
         if (e.target.closest('[data-testid="stSidebarCollapseButton"]')) {
-            setTimeout(ensureToggleButtonVisible, 150);
+            setTimeout(ensureToggleButtonVisible, 100); // Reduced delay for faster response
         }
     });
 
-    // Observe DOM changes
+    // Observe DOM changes on stApp and stSidebar
     const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
             if (mutation.type === 'childList' || mutation.type === 'attributes') {
@@ -359,8 +381,8 @@ document.addEventListener('DOMContentLoaded', function() {
         attributeFilter: ['data-collapsed', 'style', 'class']
     });
 
-    // Periodic check for Streamlit reruns
-    setInterval(ensureToggleButtonVisible, 1000);
+    // More frequent periodic check for Streamlit reruns and full-screen mode
+    setInterval(ensureToggleButtonVisible, 500);
 });
 </script>
 """, unsafe_allow_html=True)
