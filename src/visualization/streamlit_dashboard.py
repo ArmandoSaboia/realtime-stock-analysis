@@ -76,8 +76,9 @@ def apply_custom_styling():
 # --- AI and Data Interpretation Functions ---
 
 @st.cache_data(ttl=3600) # Cache for 1 hour
-def get_stock_insights(groq_client_instance, query, model="llama3-8b-8192"):
+def get_stock_insights(query, model="llama3-8b-8192"):
     """Get AI-powered insights from Groq."""
+    groq_client_instance = st.session_state.get('groq_client')
     if groq_client_instance is None:
         return "Error: Groq API client not initialized. Please enter your API key."
     try:
@@ -181,7 +182,7 @@ def handle_ai_analysis(td_client_instance, groq_client_instance):
             
             # 4. Display results
             st.subheader(f"Analysis for {ticker}")
-            ai_insights = get_stock_insights(groq_client_instance, query)
+            ai_insights = get_stock_insights(query)
             st.markdown(ai_insights)
 
 def handle_prediction(td_client_instance, groq_client_instance):
@@ -223,7 +224,7 @@ def handle_prediction(td_client_instance, groq_client_instance):
                     f"\n- Predicted price in {days_to_predict} days: ${future_prices[-1]:.2f} ({price_change_pct:+.2f}%)"
                     f"\n- Discuss potential factors, risks, and opportunities for this prediction based on time-series forecasting."
                 )
-                insights = get_stock_insights(groq_client_instance, prediction_query)
+                insights = get_stock_insights(prediction_query)
                 st.subheader("AI Interpretation of Prediction")
                 st.markdown(insights)
 
