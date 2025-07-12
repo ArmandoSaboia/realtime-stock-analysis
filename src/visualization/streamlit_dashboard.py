@@ -1,484 +1,450 @@
+# src/visualization/streamlit_dashboard.py
+
 import streamlit as st
 import pandas as pd
-import numpy as np
-import plotly.graph_objects as go
-import plotly.express as px
+import json
 import os
-import sys
-from pathlib import Path
-import logging
-from functools import lru_cache
-from datetime import datetime, timedelta
-from sklearn.linear_model import LinearRegression
-import time
-
-# Add the project root to sys.path for module resolution
-script_dir = Path(__file__).resolve().parent
-project_root = script_dir.parent.parent # Adjust this if your project structure is different
-
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
-
-# Debugging prints (can be removed after verification)
-print(f"Script directory: {script_dir}")
-print(f"Project root added to sys.path: {project_root}")
-print(f"Current sys.path: {sys.path}")
-
-# Initialize API clients
-from data_ingestion.stock_apis import TwelveDataAPI
-twelvedata_client = TwelveDataAPI()
-
-# Global model instance
-OPT_MODEL = None
-
-@st.cache_resource
-def initialize_model():
-    """Initialize the OPT-125M model at startup with caching."""
-    global OPT_MODEL
-    if OPT_MODEL is None:
-        try:
-            logger.info("Initializing OPT-125M model")
-            # Placeholder for actual model initialization
-            # device = torch.device('cpu')
-            # torch.set_num_threads(1)
-            # torch.set_grad_enabled(False)
-            # model_name = 'facebook/opt-125m'
-            # tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
-            # model = AutoModelForCausalLM.from_pretrained(
-            #     model_name,
-            #     device_map='cpu',
-            #     torch_dtype=torch.float16,
-            #     low_cpu_mem_usage=True
-            # )
-            
-            # Dummy model for now
-            def generate_text_dummy(prompt):
-                return f"Generated text for: {prompt}"
-
-            OPT_MODEL = generate_text_dummy
-            logger.info("Model initialized successfully")
-            return True
-        except Exception as e:
-            logger.error(f"Failed to initialize OPT-125M model: {str(e)}")
-            return False
-    return True
-
-def get_model():
-    """Get the initialized model instance."""
-    return OPT_MODEL if OPT_MODEL is not None else initialize_model()
-
-# Time series options for Twelve Data API
-TIME_SERIES_OPTIONS = {
-    "Intraday": {
-        "interval": "1min",
-        "outputsize": 60
-    },
-    "Daily": {
-        "interval": "1day",
-        "outputsize": 90
-    },
-    "Weekly": {
-        "interval": "1week",
-        "outputsize": 52
-    },
-    "Monthly": {
-        "interval": "1month",
-        "outputsize": 12
-    }
-}
-
-@st.cache_data(ttl=86400) # Cache for 24 hours
-def get_global_symbols():
-    """Get a comprehensive list of global symbols for the dropdown."""
-    us_stocks = {
-        "Technology": ["AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA", "INTC", "CSCO", "ADBE"],
-        "Finance": ["JPM", "BAC", "GS", "MS", "C", "WFC", "V", "MA", "AXP", "BLK"],
-        "Healthcare": ["JNJ", "PFE", "MRK", "UNH", "ABT", "TMO", "MDT", "ABBV", "CVS", "LLY"],
-        "Consumer": ["PG", "KO", "PEP", "WMT", "DIS", "MCD", "SBUX", "NKE", "HD", "LOW"]
-    }
-    global_stocks = {
-        "Europe": ["SAP.DE", "ASML.AS", "NESN.SW", "ROG.SW", "BAYN.DE"],
-        "Asia": ["7203.T", "9984.T", "005930.KS", "0700.HK", "1398.HK"],
-        "Other": ["SHOP.TO", "RY.TO", "CSU.TO", "BHP.AX", "CBA.AX", "WBC.AX"]
-    }
-    crypto = ["BTC/USD", "ETH/USD", "XRP/USD", "LTC/USD", "BCH/USD"] # Twelve Data uses / for crypto
-    forex = ["EUR/USD", "USD/JPY", "GBP/USD", "USD/CHF", "AUD/USD", "USD/CAD", "NZD/USD"]
-    
-    all_symbols = {
-        "US Indices": ["SPY", "QQQ", "DIA", "IWM", "VTI"],
-        "Global Indices": ["^FTSE", "^GDAXI", "^FCHI", "^STOXX50E", "^N225", "^HSI", "000001.SS", "^AXJO", "^GSPC", "^IXIC", "^DJI", "^RUT"],
-    }
-    for category, symbols in us_stocks.items():
-        all_symbols[f"US {category}"] = symbols
-    for region, symbols in global_stocks.items():
-        all_symbols[f"{region} Stocks"] = symbols
-    all_symbols["Cryptocurrencies"] = crypto
-    all_symbols["Forex"] = forex
-    return all_symbols
-
-def display_insights(raw_response, ticker, price_data=None, news_data=None):
-    """Display comprehensive stock insights with news integration."""
-    response = (raw_response[7:] if isinstance(raw_response, str) and raw_response.startswith("Answer:") else str(raw_response)).strip()
-    # Simplified data points extraction for demonstration
-    data_points = {"ticker": ticker.upper(), "latest_price": price_data["close"].iloc[-1] if price_data is not None and not price_data.empty else "N/A"}
-    
-    with st.expander("Analysis Details", expanded=True):
-        st.markdown(f'<div class="insights-container">{response}</div>', unsafe_allow_html=True)
-
-def display_metric(label, value, delta=None, delta_color="normal"):
-    """Display a metric with custom styling and improved error handling."""
-    try:
-        if isinstance(value, (int, float)):
-            value_str = f"{value:.2f}"
-        else:
-            value_str = value
-        delta_class = "metric-delta-positive" if delta_color == "positive" else \
-                      "metric-delta-negative" if delta_color == "negative" else ""
-        delta_html = "" if delta is None else f'<div class="metric-delta {delta_class}">{delta}</div>'
-        html = f"""
-        <div class="metric-container">
-            <div class="metric-label">{label}</div>
-            <div class="metric-value">{value_str}</div>
-            {delta_html}
-        </div>
-        """
-        st.markdown(html, unsafe_allow_html=True)
-    except Exception as e:
-        st.error(f"Error displaying metric '{label}': {str(e)}")
-
-def apply_custom_styling():
-    """Apply custom CSS for light mode only."""
-    styles = {
-        ".css-12oz5g7": {
-            "padding": "2rem 1rem",
-            "borderRadius": "15px",
-            "boxShadow": "0 4px 12px rgba(0, 0, 0, 0.05)",
-            "background": "white",
-            "marginBottom": "1.5rem"
-        },
-        "h1, h2, h3": {
-            "fontFamily": "'Segoe UI', sans-serif",
-            "fontWeight": "600"
-        },
-        "h1": {
-            "color": "#1E3A8A",
-            "paddingBottom": "1rem",
-            "borderBottom": "1px solid solid #f0f0f0",
-            "marginBottom": "2rem"
-        },
-        "h2, h3": {
-            "color": "#2563EB",
-            "marginTop": "1.5rem"
-        },
-        ".metric-container": {
-            "background": "#F8FAFC",
-            "borderRadius": "10px",
-            "padding": "1rem",
-            "boxShadow": "0 2px 8px rgba(0, 0, 0, 0.04)",
-            "transition": "transform 0.2s ease, box-shadow 0.2s ease"
-        },
-        ".metric-container:hover": {
-            "transform": "translateY(-2px)",
-            "boxShadow": "0 4px 12px rgba(0, 0, 0, 0.08)"
-        },
-        ".metric-label": {
-            "fontSize": "0.9rem",
-            "color": "#6B7280",
-            "fontWeight": "500"
-        },
-        ".metric-value": {
-            "fontSize": "1.8rem",
-            "fontWeight": "600",
-            "color": "#1E3A8A",
-            "margin": "0.3rem 0"
-        },
-        ".metric-delta": {"fontSize": "0.9rem",
-            "fontWeight": "500"
-        },
-        ".metric-delta-positive": {
-            "color": "#10B981"
-        },
-        ".metric-delta-negative": {
-            "color": "#EF4444"
-        },
-        ".stButton button": {
-            "backgroundColor": "#2563EB",
-            "color": "white",
-            "borderRadius": "8px",
-            "padding": "0.5rem 1rem",
-            "fontWeight": "500",
-            "border": "none",
-            "transition": "background-color 0.2s ease"
-        },
-        ".stButton button:hover": {
-            "backgroundColor": "#1E40AF"
-        },
-        ".insights-container": {
-            "background": "#F0F9FF",
-            "borderLeft": "4px solid #0EA5E9",
-            "padding": "1rem",
-            "borderRadius": "0 8px 8px 0",
-            "margin": "1rem 0"
-        },
-        ".key-point": {
-            "padding": "0.5rem 1rem",
-            "margin": "0.5rem 0",
-            "background": "#F0FDF4",
-            "borderRadius": "8px",
-            "borderLeft": "3px solid #10B981"
-        }
-    }
-    css = "".join(
-        f"{selector} {{\n" + "".join(f"{prop}: {value};\n" for prop, value in props.items()) + "}}\n"
-        for selector, props in styles.items()
-    )
-    st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
-
-def main():
-    apply_custom_styling()
-    st.sidebar.header("⚙️ Controls")
-    
-    module = st.sidebar.selectbox(
-        "Select Module",
-        ["Time Series Analysis", "Price Prediction", "Portfolio Optimizer", "Symbol Search", "Company News", "Charts", "WebSocket", "Debugging"]
-    )
-
-    if module == "Time Series Analysis":
-        st.header("Time Series Analysis")
-        symbol = st.text_input("Enter Stock Symbol", "AAPL").upper()
-        interval = st.selectbox("Select Interval", ["1min", "5min", "15min", "30min", "45min", "1h", "2h", "4h", "8h", "1day", "1week", "1month"], index=8)
-        outputsize = st.slider("Number of Data Points", 50, 5000, 180, 10)
-
-        if st.button("Fetch Time Series Data"):
-            data = twelvedata_client.get_time_series(symbol=symbol, interval=interval, outputsize=outputsize)
-            if data is not None and not data.empty:
-                fig = go.Figure(data=[go.Candlestick(x=data.index, open=data['open'], high=data['high'], low=data['low'], close=data['close'])])
-                fig.update_layout(title=f'{symbol} Price Chart', template='plotly_dark', xaxis_rangeslider_visible=False)
-                st.plotly_chart(fig, use_container_width=True)
-                with st.expander("View Raw Data"):
-                    st.dataframe(data)
-            else:
-                st.warning("No time series data found.")
-
-    elif module == "Price Prediction":
-        st.header("Price Prediction")
-        symbol = st.text_input("Enter Stock Symbol", "GOOGL").upper()
-        days_to_predict = st.slider("Days to Predict", 7, 90, 30)
-
-        if st.button("Generate Prediction"):
-            historical_data = twelvedata_client.get_time_series(symbol=symbol, interval="1day", outputsize=500)
-            if historical_data is not None and not historical_data.empty:
-                df = historical_data.reset_index()
-                df['datetime'] = pd.to_datetime(df['datetime'])
-                df.set_index("datetime", inplace=True)
-                df['days_since_start'] = (df.index - df.index.min()).days
-                X = df[['days_since_start']]
-                y = df['close']
-
-                model = LinearRegression()
-                model.fit(X, y)
-
-                last_day = df['days_since_start'].max()
-                future_days = np.arange(last_day + 1, last_day + 1 + days_to_predict).reshape(-1, 1)
-                predicted_prices = model.predict(future_days)
-
-                last_date = df.index.max()
-                future_dates = [last_date + timedelta(days=i) for i in range(1, days_to_predict + 1)]
-
-                fig = go.Figure()
-                fig.add_trace(go.Scatter(x=df.index, y=df['close'], mode='lines', name='Historical Price'))
-                fig.add_trace(go.Scatter(x=future_dates, y=predicted_prices, mode='lines', name='Predicted Price', line=dict(dash='dash')))
-                fig.update_layout(title=f'{symbol} Price Prediction for Next {days_to_predict} Days', template='plotly_dark')
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.warning("Could not fetch data for prediction.")
-
-    elif module == "Portfolio Optimizer":
-        st.header("Portfolio Optimizer")
-        tickers_str = st.text_input("Enter stock tickers separated by commas", "AAPL,GOOG,MSFT,TSLA").upper()
-        
-        if st.button("Optimize Portfolio"):
-            tickers = [ticker.strip() for ticker in tickers_str.split(',')]
-            if len(tickers) < 2:
-                st.warning("Please enter at least two tickers.")
-                return
-
-            with st.spinner("Fetching data for all tickers..."):
-                all_data = {ticker: twelvedata_client.get_time_series(symbol=ticker, interval="1day", outputsize=252) for ticker in tickers}
-            
-            if any(df.empty for df in all_data.values()):
-                st.error("Failed to fetch data for one or more tickers. Please check symbols and try again.")
-                return
-
-            close_prices = pd.concat([df['close'].rename(ticker) for ticker, df in all_data.items()], axis=1)
-            close_prices.dropna(inplace=True)
-
-            if close_prices.empty:
-                st.error("Could not align data for the given tickers. They may not have overlapping trading days.")
-                return
-
-            returns = close_prices.pct_change().dropna()
-            
-            mean_returns = returns.mean()
-            cov_matrix = returns.cov()
-            num_portfolios = 25000
-            results = np.zeros((3, num_portfolios))
-            
-            for i in range(num_portfolios):
-                weights = np.random.random(len(tickers))
-                weights /= np.sum(weights)
-                
-                portfolio_return = np.sum(mean_returns * weights) * 252
-                portfolio_stddev = np.sqrt(np.dot(weights.T, np.dot(cov_matrix, weights))) * np.sqrt(252)
-                
-                results[0,i] = portfolio_return
-                results[1,i] = portfolio_stddev
-                results[2,i] = results[0,i] / results[1,i] # Sharpe Ratio
-
-            max_sharpe_idx = np.argmax(results[2])
-            max_sharpe_return = results[0, max_sharpe_idx]
-            max_sharpe_stddev = results[1, max_sharpe_idx]
-            
-            optimal_weights = np.random.dirichlet(np.ones(len(tickers)), size=1)[0] # Placeholder for actual optimal weights
-            
-            st.subheader("Optimal Asset Allocation (Max Sharpe Ratio)")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.markdown("<div style=\"background-color: #F0F0F0; padding: 10px; border-radius: 5px;\">", unsafe_allow_html=True)
-                st.metric("Annualized Return", f"{max_sharpe_return:.2%}")
-                st.markdown("</div>", unsafe_allow_html=True)
-
-                st.markdown("<div style=\"background-color: #F0F0F0; padding: 10px; border-radius: 5px; margin-top: 10px;\">", unsafe_allow_html=True)
-                st.metric("Annualized Volatility (Risk)", f"{max_sharpe_stddev:.2%}")
-                st.markdown("</div>", unsafe_allow_html=True)
-
-                st.markdown("<div style=\"background-color: #F0F0F0; padding: 10px; border-radius: 5px; margin-top: 10px;\">", unsafe_allow_html=True)
-                st.metric("Sharpe Ratio", f"{results[2, max_sharpe_idx]:.2f}")
-                st.markdown("</div>", unsafe_allow_html=True)
-
-            with col2:
-                pie_df = pd.DataFrame({'Weight': optimal_weights}, index=tickers)
-                fig = px.pie(pie_df, values='Weight', names=pie_df.index, title='Optimal Portfolio Weights')
-                st.plotly_chart(fig, use_container_width=True)
-
-    elif module == "Symbol Search":
-        st.header("Symbol Search")
-        query = st.text_input("Enter search query (e.g., 'Apple', 'Micro')", "Apple")
-        if st.button("Search"):
-            results = twelvedata_client.search_symbols(query)
-            if results and results.get('data'):
-                st.dataframe(pd.DataFrame(results['data']))
-            else:
-                st.warning("No symbols found.")
-
-    elif module == "Company News":
-        st.header("Company News")
-        symbol = st.text_input("Enter Stock Symbol for News", "TSLA").upper()
-        if st.button("Fetch News"):
-            with st.spinner("Generating news insights..."):
-                try:
-                    # Using Groq API for news insights as requested
-                    insights = generate_insights(f"Latest news for {symbol}")
-                    st.write(insights)
-                except Exception as e:
-                    st.error(f"Error generating news insights: {e}")
-
-    elif module == "Charts":
-        st.header("Charts")
-        chart_type = st.selectbox("Select Chart Type", ["Static (Matplotlib)", "Interactive (Plotly)"])
-        symbol = st.text_input("Enter Stock Symbol for Chart", "MSFT").upper()
-        interval = st.selectbox("Select Interval for Chart", ["1day", "1week", "1month"], index=0)
-        outputsize = st.slider("Number of Data Points for Chart", 50, 500, 75, 10)
-
-        if st.button("Generate Chart"):
-            ts_data_obj = twelvedata_client.get_time_series_object(symbol=symbol, interval=interval, outputsize=outputsize)
-            if ts_data_obj:
-                if chart_type == "Static (Matplotlib)":
-                    st.subheader("Static Chart (Matplotlib)")
-                    # Fetch data as pandas DataFrame for mplfinance
-                    data_for_plot = ts_data_obj.as_pandas()
-                    if not data_for_plot.empty:
-                        # mplfinance expects specific column names: Open, High, Low, Close, Volume
-                        # Ensure the index is datetime
-                        data_for_plot.index = pd.to_datetime(data_for_plot.index)
-                        data_for_plot = data_for_plot.rename(columns={
-                            'open': 'Open',
-                            'high': 'High',
-                            'low': 'Low',
-                            'close': 'Close',
-                            'volume': 'Volume'
-                        })
-                        # Create a simple plot using matplotlib (mplfinance is a wrapper)
-                        fig, ax = plt.subplots()
-                        ax.plot(data_for_plot.index, data_for_plot['Close'])
-                        ax.set_title(f'{symbol} Close Price')
-                        ax.set_xlabel('Date')
-                        ax.set_ylabel('Price')
-                        st.pyplot(fig)
-                    else:
-                        st.warning("No data to generate static chart.")
-                elif chart_type == "Interactive (Plotly)":
-                    st.subheader("Interactive Chart (Plotly)")
-                    fig = ts_data_obj.as_plotly_figure()
-                    st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.warning("No data to generate chart.")
-
-    elif module == "WebSocket":
-        st.header("WebSocket Data Stream (Pro Plan Required)")
-        st.write("This feature requires a Twelve Data Pro plan or higher.")
-        st.write("Please refer to the Twelve Data Python Client documentation for more details.")
-        st.code("""
-import time
+from dotenv import load_dotenv
 from twelvedata import TDClient
 
-messages_history = []
+# Load environment variables from a .env file
+load_dotenv()
 
-def on_event(e):
-    print(e)
-    messages_history.append(e)
+def handle_symbol_search(td_client):
+    """
+    Handles the UI and logic for the Symbol Search feature.
+    """
+    st.subheader("Symbol Search")
+    st.write("Find stock symbols, forex pairs, crypto, ETFs, and more.")
+    
+    query = st.text_input("Enter search query (e.g., 'Apple', 'EUR/USD', 'BTC')", "AAPL")
 
-td = TDClient(apikey="YOUR_API_KEY_HERE")
-ws = td.websocket(symbols="BTC/USD", on_event=on_event)
-ws.subscribe(['ETH/BTC', 'AAPL'])
-ws.connect()
-while True:
-    print('messages received: ', len(messages_history))
-    ws.heartbeat()
-    time.sleep(10)
-""")
+    if st.button("Search"):
+        if not query:
+            st.warning("Please enter a search query.")
+            return
+        try:
+            with st.spinner("Searching..."):
+                results = td_client.search(symbol=query).as_json()
+                if results and len(results) > 0:
+                    df = pd.DataFrame(results)
+                    st.success(f"Found {len(df)} results for '{query}'.")
+                    st.dataframe(df)
+                else:
+                    st.info(f"No results found for '{query}'.")
+        except Exception as e:
+            st.error(f"An error occurred: {e}")
 
-    elif module == "Debugging":
-        st.header("Debugging Tools")
-        debug_option = st.selectbox("Select Debugging Option", ["API Usage", "as_url() Example"])
+def handle_core_data(td_client):
+    """
+    Handles the UI and logic for core data endpoints like Price, Quote, etc.
+    """
+    st.subheader("Core Market Data")
+    
+    core_options = [
+        "Real-time Price", "End-of-Day (EOD) Price", "Quote", 
+        "Exchange Rate", "Currency Conversion"
+    ]
+    choice = st.selectbox("Select Data Type", core_options)
 
-        if debug_option == "API Usage":
-            if st.button("Get API Usage"):
-                try:
-                    usage = twelvedata_client.get_api_usage()
+    symbol = st.text_input("Enter Symbol (e.g., 'AAPL', 'EUR/USD')", "AAPL")
+
+    try:
+        if choice == "Real-time Price":
+            if st.button("Get Price"):
+                with st.spinner("Fetching price..."):
+                    price = td_client.price(symbol=symbol).as_json()
+                    st.json(price)
+
+        elif choice == "End-of-Day (EOD) Price":
+            if st.button("Get EOD Price"):
+                 with st.spinner("Fetching EOD..."):
+                    eod = td_client.eod(symbol=symbol).as_json()
+                    st.json(eod)
+
+        elif choice == "Quote":
+            if st.button("Get Quote"):
+                with st.spinner("Fetching quote..."):
+                    quote = td_client.quote(symbol=symbol).as_json()
+                    st.json(quote)
+
+        elif choice == "Exchange Rate":
+            st.info("Use a symbol format like 'USD/JPY'.")
+            if st.button("Get Exchange Rate"):
+                with st.spinner("Fetching exchange rate..."):
+                    rate = td_client.exchange_rate(symbol=symbol).as_json()
+                    st.json(rate)
+
+        elif choice == "Currency Conversion":
+            st.info("Use a symbol format like 'USD/JPY'.")
+            amount = st.number_input("Enter Amount to Convert", value=100.0)
+            if st.button("Convert Currency"):
+                with st.spinner("Performing conversion..."):
+                    conversion = td_client.currency_conversion(
+                        symbol=symbol, amount=amount
+                    ).as_json()
+                    st.json(conversion)
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
+
+
+def handle_fundamentals(td_client):
+    """
+    Handles the UI and logic for all fundamental data endpoints.
+    """
+    st.subheader("Fundamental Data")
+    
+    fund_options = [
+        "Logo", "Profile", "Dividends", "Splits", "Earnings", 
+        "Earnings Calendar", "IPO Calendar", "Statistics", 
+        "Insider Transactions", "Income Statement", "Balance Sheet", 
+        "Cash Flow", "Key Executives", "Institutional Holders", "Fund Holders"
+    ]
+    choice = st.selectbox("Select Fundamental Data Type", fund_options)
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        symbol = st.text_input("Symbol", "AAPL")
+    with col2:
+        exchange = st.text_input("Exchange (optional)", "NASDAQ")
+    with col3:
+        country = st.text_input("Country (optional)", "USA")
+
+    try:
+        if st.button(f"Get {choice}"):
+            with st.spinner(f"Fetching {choice}..."):
+                if choice == "Logo":
+                    data = td_client.get_logo(symbol=symbol, exchange=exchange, country=country).as_json()
+                    if data.get('url'):
+                        st.image(data['url'], caption=f"Logo for {symbol}")
+                    else:
+                        st.warning("Logo not found.")
+                
+                else:
+                    method_name = f"get_{choice.lower().replace(' ', '_')}"
+                    api_call = getattr(td_client, method_name)
+                    data = api_call(symbol=symbol, exchange=exchange, country=country).as_json()
+                    st.json(data)
+
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
+
+def handle_options_data(td_client):
+    """
+    Handles the UI and logic for options data endpoints.
+    """
+    st.subheader("Options Data")
+    
+    options_type = st.radio("Select Options Data", ["Options Expiration", "Options Chain"])
+    
+    symbol = st.text_input("Enter Stock Symbol", "AAPL")
+    
+    try:
+        if options_type == "Options Expiration":
+            if st.button("Get Expiration Dates"):
+                with st.spinner("Fetching expiration dates..."):
+                    expirations = td_client.get_options_expiration(symbol=symbol).as_json()
+                    if expirations.get('dates'):
+                        st.success(f"Found {len(expirations['dates'])} expiration dates.")
+                        st.json(expirations['dates'])
+                    else:
+                        st.warning("No expiration dates found.")
+
+        elif options_type == "Options Chain":
+            st.write("First, fetch expiration dates to select one for the chain.")
+            if 'exp_dates' not in st.session_state:
+                st.session_state.exp_dates = []
+
+            if st.button("Fetch Expiration Dates for Chain"):
+                 with st.spinner("Fetching expiration dates..."):
+                    expirations = td_client.get_options_expiration(symbol=symbol).as_json()
+                    if expirations.get('dates'):
+                        st.session_state.exp_dates = expirations['dates']
+                        st.success(f"Found {len(st.session_state.exp_dates)} dates. Select one below.")
+                    else:
+                        st.session_state.exp_dates = []
+                        st.warning("No dates found.")
+
+            if st.session_state.exp_dates:
+                expiration_date = st.selectbox("Select Expiration Date", st.session_state.exp_dates)
+                side = st.radio("Select Option Side", ["put", "call"], horizontal=True)
+                
+                if st.button("Get Options Chain"):
+                    with st.spinner(f"Fetching {side} options..."):
+                        chain = td_client.get_options_chain(
+                            symbol=symbol, 
+                            expiration_date=expiration_date,
+                            side=side
+                        ).as_json()
+                        
+                        if chain.get(f'{side}s'):
+                            df = pd.DataFrame(chain[f'{side}s'])
+                            st.dataframe(df)
+                        else:
+                            st.warning(f"No {side}s found for the selected criteria.")
+
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
+
+def handle_time_series(td_client):
+    """
+    Handles the UI and logic for Time Series and Technical Indicators.
+    """
+    st.subheader("Time Series & Technical Indicators")
+    st.write("Fetch historical data with optional technical indicators and charts.")
+
+    st.info("For batch requests, separate symbols with a comma (e.g., 'AAPL,MSFT,GOOG').")
+    symbol_input = st.text_input("Symbol(s)", "AAPL")
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        interval = st.selectbox("Interval", ["1min", "5min", "15min", "30min", "45min", "1h", "2h", "4h", "1day", "1week", "1month"])
+    with col2:
+        output_size = st.number_input("Output Size", min_value=1, max_value=5000, value=100)
+    with col3:
+        timezone = st.text_input("Timezone", "America/New_York")
+
+    st.write("**Technical Indicators**")
+    indicator_options = [
+        "adx", "aroon", "bbands", "ema", "macd", "rsi", "stoch", "sma", "wma"
+    ]
+    selected_indicators = st.multiselect("Select indicators to apply", indicator_options)
+    
+    output_format = st.radio(
+        "Select Output Format", 
+        ("Pandas DataFrame", "Interactive Chart (Plotly)", "JSON"),
+        horizontal=True
+    )
+    
+    include_ohlc = st.checkbox("Include OHLCV data", True)
+
+    if st.button("Get Time Series Data"):
+        if not symbol_input:
+            st.warning("Please enter at least one symbol.")
+            return
+
+        try:
+            with st.spinner("Fetching time series data..."):
+                ts = td_client.time_series(
+                    symbol=symbol_input,
+                    interval=interval,
+                    outputsize=output_size,
+                    timezone=timezone,
+                )
+
+                for indicator in selected_indicators:
+                    ts = getattr(ts, f"with_{indicator}")()
+                
+                if not include_ohlc:
+                    ts = ts.without_ohlc()
+
+                if output_format == "JSON":
+                    st.write("### JSON Output")
+                    data = ts.as_json()
+                    st.json(data)
+                
+                elif output_format == "Pandas DataFrame":
+                    st.write("### Pandas DataFrame Output")
+                    df = ts.as_pandas()
+                    st.dataframe(df)
+
+                elif output_format == "Interactive Chart (Plotly)":
+                    st.write("### Interactive Chart")
+                    if ',' in symbol_input:
+                        st.warning("Plotly charts are best viewed with a single symbol. Only the first symbol may be plotted.")
+                    
+                    fig = ts.as_plotly_figure()
+                    st.plotly_chart(fig, use_container_width=True)
+
+        except Exception as e:
+            st.error(f"An error occurred: {e}")
+
+def handle_advanced_tools(td_client):
+    """
+    Handles UI for advanced features like custom endpoints, URL debugging, and API usage.
+    """
+    st.subheader("Advanced Tools")
+    
+    adv_choice = st.selectbox("Select an Advanced Tool", ["API Usage", "Custom Endpoint", "Debug Request URL"])
+
+    if adv_choice == "API Usage":
+        st.write("Check your current API credit consumption.")
+        if st.button("Get API Usage"):
+            try:
+                with st.spinner("Fetching API usage..."):
+                    usage = td_client.api_usage().as_json()
                     st.json(usage)
-                except Exception as e:
-                    st.error(f"Error fetching API usage: {e}")
-        elif debug_option == "as_url() Example":
-            st.write("This shows the URLs generated for a time series request.")
-            symbol_url = st.text_input("Symbol for as_url()", "AAPL").upper()
-            interval_url = st.selectbox("Interval for as_url()", ["1min", "1day"], index=1)
-            outputsize_url = st.slider("Outputsize for as_url()", 1, 100, 10)
-            if st.button("Get URLs"):
-                try:
-                    ts_obj_for_url = twelvedata_client.td.time_series(
-                        symbol=symbol_url,
-                        interval=interval_url,
-                        outputsize=outputsize_url,
-                        timezone="America/New_York"
-                    )
-                    urls = ts_obj_for_url.as_url()
-                    for url in urls:
-                        st.code(url)
-                except Exception as e:
-                    st.error(f"Error generating URLs: {e}")
+            except Exception as e:
+                st.error(f"An error occurred: {e}")
+
+    elif adv_choice == "Custom Endpoint":
+        st.write("Request an endpoint not explicitly available in the library.")
+        endpoint_name = st.text_input("Endpoint Name (e.g., 'quote')", "quote")
+        st.write("Enter parameters as a JSON object:")
+        params_text = st.text_area("Parameters", '{"symbol": "AAPL", "interval": "1day"}')
+        
+        if st.button("Call Custom Endpoint"):
+            try:
+                params = json.loads(params_text)
+                with st.spinner(f"Calling endpoint '{endpoint_name}'..."):
+                    endpoint = td_client.custom_endpoint(name=endpoint_name, **params)
+                    data = endpoint.as_json()
+                    st.json(data)
+            except json.JSONDecodeError:
+                st.error("Invalid JSON in parameters. Please check the format.")
+            except Exception as e:
+                st.error(f"An error occurred: {e}")
+
+    elif adv_choice == "Debug Request URL":
+        st.write("Build a time series request and see the generated API URL for debugging.")
+        symbol = st.text_input("Symbol", "AAPL")
+        interval = st.selectbox("Interval", ["1min", "5min", "1day"])
+        indicator = st.selectbox("Add a sample indicator to the URL", ["ema", "rsi", "None"])
+
+        if st.button("Generate Debug URL"):
+            with st.spinner("Generating URL..."):
+                ts = td_client.time_series(symbol=symbol, interval=interval)
+                if indicator != "None":
+                    ts = getattr(ts, f"with_{indicator}")()
+                
+                urls = ts.as_url()
+                st.write("### Generated URL(s)")
+                st.code(urls, language="json")
+
+def handle_mcp_guide():
+    """
+    Displays a guide for setting up and using the MCP Server and U-Tool.
+    """
+    st.subheader("MCP & U-Tool Guide")
+    st.write("The MCP (Model-Context Protocol) Server allows you to connect tools like Claude Desktop and VS Code directly to the Twelve Data API.")
+
+    st.markdown("---")
+    st.markdown("### MCP Functions")
+    st.write("The server exposes several core functions:")
+    st.json({
+        "time_series": "Fetch historical price data.",
+        "price": "Get the latest price.",
+        "stocks": "List available stocks.",
+        "forex_pairs": "List available forex pairs.",
+        "cryptocurrencies": "List available cryptocurrencies."
+    })
+
+    st.markdown("---")
+    st.markdown("### U-Tool: Natural Language for Financial Data")
+    st.write("The `u-tool` is an AI-powered router that lets you query the Twelve Data API using plain English. It uses GPT-4o to find the right endpoint and parameters for your request.")
+    st.info('**Example questions:** "Show me Apple stock performance this week" or "Calculate RSI for Bitcoin"')
+    st.write("**Setup for U-Tool:**")
+    st.code("""
+{
+  "mcpServers": {
+    "twelvedata": {
+      "command": "uvx",
+      "args": ["mcp-server-twelve-data@latest", "-k", "TWELVEDATA_API_KEY", "-u", "GROQ_API_KEY"]
+    }
+  }
+}
+    """, language="json")
+
+
+    st.markdown("---")
+    st.markdown("### Configuration Snippets")
+
+    st.markdown("#### Claude Desktop Integration")
+    st.code("""
+{
+  "mcpServers": {
+    "twelvedata": {
+      "command": "uvx",
+      "args": ["mcp-server-twelve-data@latest", "-k", "TWELVEDATA_API_KEY"]
+    }
+  }
+}
+    """, language="json")
+
+    st.markdown("#### VS Code Integration (Manual Setup)")
+    st.code("""
+{
+  "mcp": {
+    "servers": {
+      "twelvedata": {
+        "command": "uvx",
+        "args": [
+          "mcp-server-twelve-data@latest",
+          "-t", "streamable-http",
+          "-k", "TWELVEDATA_API_KEY"
+        ]
+      }
+    }
+  }
+}
+    """, language="json")
+
+    st.markdown("#### Docker Usage")
+    st.code("""
+# Build the image
+docker build -t mcp-server-twelve-data .
+
+# Run the server
+docker run --rm mcp-server-twelve-data -k TWELVEDATA_API_KEY
+    """, language="bash")
+
+
+def main():
+    """
+    Main function to run the Streamlit app.
+    """
+    st.set_page_config(page_title="Twelve Data Dashboard", layout="wide")
+    st.title(" Twelve Data API Dashboard")
+
+    st.sidebar.header("Configuration")
+    # Use the environment variable as the default, but allow user to override
+    api_key_from_env = os.getenv("TWELVEDATA_API_KEY")
+    api_key = st.sidebar.text_input(
+        "Enter your Twelve Data API Key", 
+        type="password", 
+        value=api_key_from_env
+    )
+
+    if not api_key:
+        st.warning("Please enter your API key in the sidebar to begin.")
+        st.stop()
+
+    try:
+        td = TDClient(apikey=api_key)
+    except Exception as e:
+        st.error(f"Failed to initialize API client: {e}")
+        st.stop()
+
+    st.sidebar.header("Features")
+    app_mode = st.sidebar.selectbox(
+        "Choose a feature",
+        [
+            "Symbol Search", 
+            "Time Series & Indicators", 
+            "Core Market Data", 
+            "Fundamental Data", 
+            "Options Data",
+            "Advanced Tools",
+            "MCP & U-Tool Guide"
+        ]
+    )
+
+    # Route to the correct handler based on user selection
+    if app_mode == "Symbol Search":
+        handle_symbol_search(td)
+    elif app_mode == "Time Series & Indicators":
+        handle_time_series(td)
+    elif app_mode == "Core Market Data":
+        handle_core_data(td)
+    elif app_mode == "Fundamental Data":
+        handle_fundamentals(td)
+    elif app_mode == "Options Data":
+        handle_options_data(td)
+    elif app_mode == "Advanced Tools":
+        handle_advanced_tools(td)
+    elif app_mode == "MCP & U-Tool Guide":
+        handle_mcp_guide()
+
 
 if __name__ == "__main__":
     main()
