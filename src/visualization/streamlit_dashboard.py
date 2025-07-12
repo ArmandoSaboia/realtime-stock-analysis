@@ -28,14 +28,19 @@ POPULAR_SYMBOLS = [
 def apply_enhanced_styling():
     st.markdown("""
     <style>
-    /* FIX FOR SIDEBAR TOGGLE BUTTON */
+    /* FIX FOR SIDEBAR TOGGLE BUTTON - ENHANCED VERSION */
     [data-testid="collapsedControl"] {
         display: block !important;
         visibility: visible !important;
         opacity: 1 !important;
-        left: 1 !important;
+        position: fixed !important;
+        left: 0 !important;
         top: 2rem !important;
-        z-index: 1000 !important;
+        z-index: 9999 !important;
+        width: auto !important;
+        height: auto !important;
+        transform: none !important;
+        transition: none !important;
     }
     
     [data-testid="collapsedControl"] button {
@@ -43,15 +48,19 @@ def apply_enhanced_styling():
         color: white !important;
         border: none !important;
         border-radius: 0 50% 50% 0 !important;
-        width: 1.8rem !important;
-        height: 1.8rem !important;
+        width: 2rem !important;
+        height: 2rem !important;
         box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important;
         transition: all 0.3s ease !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
     }
     
     [data-testid="collapsedControl"] button:hover {
         background-color: #667eea !important;
-        transform: scale(1.2) !important;
+        transform: scale(1.1) !important;
         box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important;
     }
     
@@ -59,13 +68,36 @@ def apply_enhanced_styling():
         width: 1.2rem !important;
         height: 1.2rem !important;
         stroke: white !important;
+        fill: none !important;
     }
     
-    /* Make button more visible when sidebar is collapsed */
+    /* Ensure button is always visible when sidebar is collapsed */
+    .stApp[data-collapsed="true"] [data-testid="collapsedControl"],
+    .stApp:not([data-collapsed]) [data-testid="collapsedControl"] {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: fixed !important;
+        left: 0 !important;
+        top: 2rem !important;
+        z-index: 9999 !important;
+    }
+    
+    /* Make button more prominent when sidebar is collapsed */
     .stApp[data-collapsed="true"] [data-testid="collapsedControl"] button {
         background-color: #667eea !important;
-        transform: scale(1.1);
-        box-shadow: 0 0 0 2px white, 0 0 0 4px #667eea !important;
+        transform: scale(1.05) !important;
+        box-shadow: 0 0 0 2px white, 0 0 0 4px #667eea, 0 4px 15px rgba(0,0,0,0.3) !important;
+    }
+    
+    /* Additional fallback for collapsed state */
+    .css-1d391kg, .css-1cypcdb {
+        position: relative !important;
+    }
+    
+    /* Ensure main content doesn't overlap with toggle button */
+    .main .block-container {
+        padding-left: 1rem !important;
     }
     
     /* Import Google Fonts in single line */
@@ -273,18 +305,53 @@ def apply_enhanced_styling():
     </style>
     
     <script>
-    // Ensure sidebar toggle button remains visible
+    // Enhanced sidebar toggle button visibility management
+    function ensureToggleButtonVisible() {
+        const toggleButton = document.querySelector('[data-testid="collapsedControl"]');
+        if (toggleButton) {
+            toggleButton.style.display = 'block';
+            toggleButton.style.visibility = 'visible';
+            toggleButton.style.opacity = '1';
+            toggleButton.style.position = 'fixed';
+            toggleButton.style.left = '0px';
+            toggleButton.style.top = '2rem';
+            toggleButton.style.zIndex = '9999';
+            toggleButton.style.transform = 'none';
+        }
+    }
+    
+    // Run on page load
+    document.addEventListener('DOMContentLoaded', ensureToggleButtonVisible);
+    
+    // Run when page changes (for Streamlit rerun)
+    window.addEventListener('load', ensureToggleButtonVisible);
+    
+    // Observe for changes in the DOM
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList' || mutation.type === 'attributes') {
+                setTimeout(ensureToggleButtonVisible, 100);
+            }
+        });
+    });
+    
+    // Start observing
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['data-collapsed', 'style', 'class']
+    });
+    
+    // Handle sidebar toggle clicks
     document.addEventListener('click', function(e) {
         if (e.target.closest('[data-testid="collapsedControl"]')) {
-            setTimeout(() => {
-                const sidebar = document.querySelector('.st-emotion-cache-1cypcdb');
-                if (sidebar) {
-                    sidebar.style.transform = 'none';
-                    sidebar.style.left = '0px';
-                }
-            }, 100);
+            setTimeout(ensureToggleButtonVisible, 150);
         }
     });
+    
+    // Periodic check to ensure button remains visible
+    setInterval(ensureToggleButtonVisible, 2000);
     </script>
     """, unsafe_allow_html=True)
 
