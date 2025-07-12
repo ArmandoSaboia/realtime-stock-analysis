@@ -325,6 +325,17 @@ def handle_market_data_browser(td_client_instance):
     st.subheader("Symbol Search")
     query = st.text_input("Enter search query (e.g., 'Apple', 'Micro')", "Apple")
     if st.button("Search Symbols"):
+        if td_client_instance is None:
+            st.error("Twelve Data API Key is not provided. Please connect to APIs in the sidebar.")
+            return
+
+        # Debugging: Print the type of the instance
+        st.write(f"Debug: Type of td_client_instance: {type(td_client_instance)}")
+
+        if not hasattr(td_client_instance, 'search'):
+            st.error("Error: The 'search' method is not found on the Twelve Data client. This might indicate an issue with your 'twelvedata' library installation or version. Please ensure 'twelvedata' is correctly installed and up-to-date.")
+            return
+
         try:
             results = td_client_instance.search(symbol=query).as_json()
             st.json(results)
