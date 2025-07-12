@@ -130,7 +130,7 @@ def create_prediction_chart(historical_data, future_dates, future_prices, ticker
     fig.add_trace(go.Scatter(x=future_dates, y=future_prices, name='Prediction', line=dict(color='#EF4444', dash='dash')))
     fig.update_layout(
         title=f"{ticker.upper()} Price Prediction",
-        xaxis_title='Date', yaxis_title='Price ($)')',
+        xaxis_title='Date', yaxis_title='Price ($)',
         template='plotly_white', height=500,
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
     )
