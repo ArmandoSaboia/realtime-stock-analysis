@@ -12,7 +12,7 @@
   ![GitHub issues](https://img.shields.io/github/issues/ArmandoSaboia/realtime-stock-analysis?style=for-the-badge&logo=github&logoColor=white)
   
 </div>
----
+
 
 ## The Story Behind Real-Time Stock Market Analysis
 
