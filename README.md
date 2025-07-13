@@ -1,7 +1,7 @@
 # Real-Time Stock Market Analysis
 
 ![Project Banner](assets/banner.png)
-[![Streamlit App](https://img.shields.io/badge/📊%20Launch%20Dashboard-FF4B4B?style=for-the-badge&logo=Streamlit&logoColor=white)](https://realtime-stock-market-analysis.streamlit.app/)
+[![Streamlit App](https://img.shields.io/badge/📊%20Launch%20App-FF4B4B?style=for-the-badge&logo=Streamlit&logoColor=white)](https://realtime-stock-market-analysis.streamlit.app/)
 
 <div align="center">
   
