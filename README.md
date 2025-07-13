@@ -1,7 +1,22 @@
 # Real-Time Stock Market Analysis
 
 ![Project Banner](assets/banner.png)
+[![Streamlit App](https://img.shields.io/badge/📊%20Launch%20Dashboard-FF4B4B?style=for-the-badge&logo=Streamlit&logoColor=white)](https://realtime-stock-market-analysis.streamlit.app/)
 
+<div align="center">
+  
+  **📊 Dashboard Stats**
+  
+  ![App Visits](https://api.countapi.xyz/hit/realtime-stock-analysis/dashboard-visits/badge.svg)
+  ![Unique Visitors](https://visitor-badge.glitch.me/badge?page_id=ArmandoSaboia.realtime-stock-analysis&left_text=Unique%20Visitors&left_color=gray&right_color=brightgreen)
+  
+  **📈 Repository Stats**
+  
+  ![GitHub stars](https://img.shields.io/github/stars/ArmandoSaboia/realtime-stock-analysis?style=for-the-badge&logo=github&logoColor=white)
+  ![GitHub forks](https://img.shields.io/github/forks/ArmandoSaboia/realtime-stock-analysis?style=for-the-badge&logo=github&logoColor=white)
+  ![GitHub issues](https://img.shields.io/github/issues/ArmandoSaboia/realtime-stock-analysis?style=for-the-badge&logo=github&logoColor=white)
+  
+</div>
 ---
 
 ## The Story Behind Real-Time Stock Market Analysis
