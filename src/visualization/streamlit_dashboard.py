@@ -605,7 +605,6 @@ def create_dashboard_header():
     </div>
     """, unsafe_allow_html=True)
 
-@st.cache_data(ttl=60)  # Cache data for 60 seconds
 def fetch_market_data(td_client):
     if not td_client:
         return None
