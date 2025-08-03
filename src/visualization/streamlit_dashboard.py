@@ -653,10 +653,12 @@ def fetch_market_data(td_client):
 
 def create_market_overview():
     st.markdown("### Market Overview")
+    st.write("DEBUG: create_market_overview called")
     td_client_instance = st.session_state.get('td_client')
     
     if not td_client_instance:
         st.warning("API client not connected. Please connect in the sidebar to see live data.")
+        st.write("DEBUG: td_client_instance is None")
         # Display some placeholder data
         market_data = {
             "S&P 500": {"value": "Loading...", "change": "", "type": "neutral"},
@@ -667,7 +669,9 @@ def create_market_overview():
             "Oil": {"value": "Loading...", "change": "", "type": "neutral"}
         }
     else:
+        st.write("DEBUG: td_client_instance is available, fetching data...")
         market_data = fetch_market_data(td_client_instance)
+        st.write(f"DEBUG: Fetched market data: {market_data}")
 
     if not market_data:
         st.info("Market data is currently unavailable.")
