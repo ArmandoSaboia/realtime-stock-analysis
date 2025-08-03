@@ -673,14 +673,17 @@ def create_market_overview():
     if not td_client_instance:
         st.warning("API client not connected. Please connect in the sidebar to see live data.")
         st.write("DEBUG: td_client_instance is None")
-        # Display some placeholder data
+        # Display placeholder data for all assets
         market_data = {
             "S&P 500": {"value": "Loading...", "change": "", "type": "neutral"},
             "NASDAQ": {"value": "Loading...", "change": "", "type": "neutral"},
             "DOW": {"value": "Loading...", "change": "", "type": "neutral"},
             "VIX": {"value": "Loading...", "change": "", "type": "neutral"},
             "Gold": {"value": "Loading...", "change": "", "type": "neutral"},
-            "Oil": {"value": "Loading...", "change": "", "type": "neutral"}
+            "Silver": {"value": "Loading...", "change": "", "type": "neutral"},
+            "Oil": {"value": "Loading...", "change": "", "type": "neutral"},
+            "Bitcoin": {"value": "Loading...", "change": "", "type": "neutral"},
+            "Ethereum": {"value": "Loading...", "change": "", "type": "neutral"}
         }
     else:
         st.write("DEBUG: td_client_instance is available, fetching data...")
