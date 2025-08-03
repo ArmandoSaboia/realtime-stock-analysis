@@ -63,3 +63,4 @@ plotly
 scikit-learn
 mplfinance
 statsmodels
+yfinance

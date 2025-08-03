@@ -249,81 +249,59 @@ def create_dashboard_header():
     </div>
     """, unsafe_allow_html=True)
 
+import yfinance as yf
+
 @st.cache_data(ttl=900)  # Cache for 15 minutes
 def fetch_market_data():
-    td_client = st.session_state.get('td_client')
-    if not td_client:
-        return None
-    
     symbols = {
-        "S&P 500": "SPX",
-        "NASDAQ": "IXIC",
-        "DOW": "DJI",
-        "VIX": "VIX",
-        "Gold": "XAU/USD",
-        "Silver": "XAG/USD",
-        "Oil": "WTI",
-        "Bitcoin": "BTC/USD",
-        "Ethereum": "ETH/USD"
+        "S&P 500": "^GSPC",
+        "NASDAQ": "^IXIC",
+        "DOW": "^DJI",
+        "VIX": "^VIX",
+        "Gold": "GC=F",
+        "Silver": "SI=F",
+        "Oil": "CL=F",
+        "Bitcoin": "BTC-USD",
+        "Ethereum": "ETH-USD"
     }
     
     market_data = {}
-    try:
-        for name, symbol in symbols.items():
-            try:
-                quote = td_client.quote(symbol=symbol).as_json()
-                if quote and 'close' in quote and 'change' in quote and 'percent_change' in quote:
-                    value = float(quote['close'])
-                    change = float(quote['percent_change'])
-                    
-                    change_type = "positive" if change >= 0 else "negative"
-                    if name == "VIX":
-                        change_type = "negative" if change >= 0 else "positive"
+    for name, ticker in symbols.items():
+        try:
+            data = yf.Ticker(ticker).history(period="2d")
+            if not data.empty:
+                prev_close = data['Close'].iloc[0]
+                latest_price = data['Close'].iloc[-1]
+                change = latest_price - prev_close
+                percent_change = (change / prev_close) * 100
+                
+                change_type = "positive" if change >= 0 else "negative"
+                if name == "VIX":
+                    change_type = "negative" if change >= 0 else "positive"
 
-                    # Format values
-                    formatted_value = f"${value:,.2f}" if name not in ["S&P 500", "NASDAQ", "DOW", "VIX"] else f"{value:,.2f}"
-                    formatted_change = f"{change:+.2f}%"
-                    
-                    market_data[name] = {
-                        "value": formatted_value,
-                        "change": formatted_change,
-                        "type": change_type
-                    }
-                else:
-                    market_data[name] = {"value": "N/A", "change": "N/A", "type": "neutral"}
-            except Exception:
-                market_data[name] = {"value": "Error", "change": "", "type": "negative"}
-    except Exception as e:
-        st.error(f"An unexpected error occurred while fetching market data: {e}")
-        return None
-        
+                formatted_value = f"${latest_price:,.2f}" if name not in ["S&P 500", "NASDAQ", "DOW", "VIX"] else f"{latest_price:,.2f}"
+                formatted_change = f"{percent_change:+.2f}%"
+                
+                market_data[name] = {
+                    "value": formatted_value,
+                    "change": formatted_change,
+                    "type": change_type
+                }
+            else:
+                market_data[name] = {"value": "N/A", "change": "N/A", "type": "neutral"}
+        except Exception:
+            market_data[name] = {"value": "Error", "change": "", "type": "negative"}
+            
     return market_data
 
 def create_market_overview():
     st.markdown("### Market Overview")
-    td_client_instance = st.session_state.get('td_client')
     
     if st.sidebar.button("Force Refresh"):
-        # Clear the cache for fetch_market_data
         st.cache_data.clear()
         st.rerun()
 
-    if not td_client_instance:
-        st.warning("API client not connected. Please connect in the sidebar to see live data.")
-        # Display placeholder data
-        market_data = {
-            "S&P 500": {"value": "Loading...", "change": "", "type": "neutral"},
-            "NASDAQ": {"value": "Loading...", "change": "", "type": "neutral"},
-            "DOW": {"value": "Loading...", "change": "", "type": "neutral"},
-            "VIX": {"value": "Loading...", "change": "", "type": "neutral"},
-            "Gold": {"value": "Loading...", "change": "", "type": "neutral"},
-            "Silver": {"value": "Loading...", "change": "", "type": "neutral"},
-            "Oil": {"value": "Loading...", "change": "", "type": "neutral"},
-            "Bitcoin": {"value": "Loading...", "change": "", "type": "neutral"},
-            "Ethereum": {"value": "Loading...", "change": "", "type": "neutral"}
-        }
-    else:
-        market_data = fetch_market_data()
+    market_data = fetch_market_data()
 
     if not market_data:
         st.info("Market data is currently unavailable.")
