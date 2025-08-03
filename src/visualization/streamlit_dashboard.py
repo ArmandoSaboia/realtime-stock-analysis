@@ -606,7 +606,9 @@ def create_dashboard_header():
     """, unsafe_allow_html=True)
 
 def fetch_market_data(td_client):
+    st.write("DEBUG: fetch_market_data called")
     if not td_client:
+        st.write("DEBUG: td_client is None in fetch_market_data")
         return None
     
     symbols = {
@@ -624,31 +626,39 @@ def fetch_market_data(td_client):
     market_data = {}
     try:
         for name, symbol in symbols.items():
-            quote = td_client.quote(symbol=symbol).as_json()
-            if quote and 'close' in quote and 'change' in quote and 'percent_change' in quote:
-                value = float(quote['close'])
-                change = float(quote['percent_change'])
-                
-                # Determine type
-                change_type = "positive" if change >= 0 else "negative"
-                if name == "VIX":  # VIX has an inverse relationship
-                    change_type = "negative" if change >= 0 else "positive"
+            try:
+                st.write(f"DEBUG: Fetching {name} ({symbol})")
+                quote = td_client.quote(symbol=symbol).as_json()
+                st.write(f"DEBUG: API response for {name}: {quote}")
+                if quote and 'close' in quote and 'change' in quote and 'percent_change' in quote:
+                    value = float(quote['close'])
+                    change = float(quote['percent_change'])
+                    
+                    change_type = "positive" if change >= 0 else "negative"
+                    if name == "VIX":
+                        change_type = "negative" if change >= 0 else "positive"
 
-                # Format values
-                formatted_value = f"${value:,.2f}" if name not in ["S&P 500", "NASDAQ", "DOW", "VIX"] else f"{value:,.2f}"
-                formatted_change = f"{change:+.2f}%"
-                
-                market_data[name] = {
-                    "value": formatted_value,
-                    "change": formatted_change,
-                    "type": change_type
-                }
-            else:
-                market_data[name] = {"value": "N/A", "change": "N/A", "type": "neutral"}
+                    formatted_value = f"${value:,.2f}" if name not in ["S&P 500", "NASDAQ", "DOW", "VIX"] else f"{value:,.2f}"
+                    formatted_change = f"{change:+.2f}%"
+                    
+                    market_data[name] = {
+                        "value": formatted_value,
+                        "change": formatted_change,
+                        "type": change_type
+                    }
+                else:
+                    st.write(f"DEBUG: Invalid data for {name}: {quote}")
+                    market_data[name] = {"value": "N/A", "change": "N/A", "type": "neutral"}
+            except Exception as e:
+                st.error(f"Error fetching data for {name}: {e}")
+                st.write(f"DEBUG: Exception for {name}: {e}")
+                market_data[name] = {"value": "Error", "change": "", "type": "negative"}
     except Exception as e:
-        st.error(f"Error fetching market data: {e}")
+        st.error(f"An unexpected error occurred while fetching market data: {e}")
+        st.write(f"DEBUG: Global exception in fetch_market_data: {e}")
         return None
         
+    st.write(f"DEBUG: Final market_data: {market_data}")
     return market_data
 
 def create_market_overview():
@@ -656,6 +666,10 @@ def create_market_overview():
     st.write("DEBUG: create_market_overview called")
     td_client_instance = st.session_state.get('td_client')
     
+    if st.sidebar.button("Force Refresh"):
+        st.write("DEBUG: Force Refresh button clicked")
+        st.rerun()
+
     if not td_client_instance:
         st.warning("API client not connected. Please connect in the sidebar to see live data.")
         st.write("DEBUG: td_client_instance is None")
