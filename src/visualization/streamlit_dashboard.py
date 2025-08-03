@@ -605,71 +605,68 @@ def create_dashboard_header():
     </div>
     """, unsafe_allow_html=True)
 
+@st.cache_data(ttl=900)  # Cache for 15 minutes
 def fetch_market_data(td_client):
-    st.write("DEBUG: fetch_market_data called")
     if not td_client:
-        st.write("DEBUG: td_client is None in fetch_market_data")
         return None
     
+    # Using ETFs and symbols available on the free plan
     symbols = {
-        "S&P 500": "GSPC",
-        "NASDAQ": "IXIC",
-        "DOW": "DJI",
-        "VIX": "^VIX",
-        "Gold": "XAU/USD",
-        "Silver": "XAG/USD",
+        "S&P 500": "SPY",
+        "NASDAQ": "QQQ",
+        "DOW": "DIA",
+        "VIX": "VXX",
+        "Gold": "GLD",
+        "Silver": "SLV",
         "Oil": "USO",
         "Bitcoin": "BTC/USD",
         "Ethereum": "ETH/USD"
     }
     
     market_data = {}
-    for name, symbol in symbols.items():
-        try:
-            st.write(f"DEBUG: Fetching {name} ({symbol})")
-            quote = td_client.quote(symbol=symbol).as_json()
-            st.write(f"DEBUG: API response for {name}: {quote}")
-            if quote and 'close' in quote and 'change' in quote and 'percent_change' in quote:
-                value = float(quote['close'])
-                change = float(quote['percent_change'])
-                
-                change_type = "positive" if change >= 0 else "negative"
-                if name == "VIX":
-                    change_type = "negative" if change >= 0 else "positive"
+    try:
+        for name, symbol in symbols.items():
+            try:
+                quote = td_client.quote(symbol=symbol).as_json()
+                if quote and 'close' in quote and 'change' in quote and 'percent_change' in quote:
+                    value = float(quote['close'])
+                    change = float(quote['percent_change'])
+                    
+                    change_type = "positive" if change >= 0 else "negative"
+                    if name == "VIX":
+                        change_type = "negative" if change >= 0 else "positive"
 
-                formatted_value = f"${value:,.2f}" if name not in ["S&P 500", "NASDAQ", "DOW", "VIX"] else f"{value:,.2f}"
-                formatted_change = f"{change:+.2f}%"
-                
-                market_data[name] = {
-                    "value": formatted_value,
-                    "change": formatted_change,
-                    "type": change_type
-                }
-            else:
-                st.write(f"DEBUG: Invalid data for {name}: {quote}")
-                market_data[name] = {"value": "N/A", "change": "N/A", "type": "neutral"}
-        except Exception as e:
-            st.error(f"Error fetching data for {name}: {e}")
-            st.write(f"DEBUG: Exception for {name}: {e}")
-            market_data[name] = {"value": "Error", "change": "", "type": "negative"}
-        time.sleep(1) # Add a 1-second delay to avoid rate limiting
+                    # Format values
+                    formatted_value = f"${value:,.2f}" if name not in ["S&P 500", "NASDAQ", "DOW", "VIX"] else f"{value:,.2f}"
+                    formatted_change = f"{change:+.2f}%"
+                    
+                    market_data[name] = {
+                        "value": formatted_value,
+                        "change": formatted_change,
+                        "type": change_type
+                    }
+                else:
+                    market_data[name] = {"value": "N/A", "change": "N/A", "type": "neutral"}
+            except Exception:
+                market_data[name] = {"value": "Error", "change": "", "type": "negative"}
+    except Exception as e:
+        st.error(f"An unexpected error occurred while fetching market data: {e}")
+        return None
         
-    st.write(f"DEBUG: Final market_data: {market_data}")
     return market_data
 
 def create_market_overview():
     st.markdown("### Market Overview")
-    st.write("DEBUG: create_market_overview called")
     td_client_instance = st.session_state.get('td_client')
     
     if st.sidebar.button("Force Refresh"):
-        st.write("DEBUG: Force Refresh button clicked")
+        # Clear the cache for fetch_market_data
+        st.cache_data.clear()
         st.rerun()
 
     if not td_client_instance:
         st.warning("API client not connected. Please connect in the sidebar to see live data.")
-        st.write("DEBUG: td_client_instance is None")
-        # Display placeholder data for all assets
+        # Display placeholder data
         market_data = {
             "S&P 500": {"value": "Loading...", "change": "", "type": "neutral"},
             "NASDAQ": {"value": "Loading...", "change": "", "type": "neutral"},
@@ -682,23 +679,24 @@ def create_market_overview():
             "Ethereum": {"value": "Loading...", "change": "", "type": "neutral"}
         }
     else:
-        st.write("DEBUG: td_client_instance is available, fetching data...")
         market_data = fetch_market_data(td_client_instance)
-        st.write(f"DEBUG: Fetched market data: {market_data}")
 
     if not market_data:
         st.info("Market data is currently unavailable.")
         return
 
-    cols = st.columns(3)
-    for i, (name, data) in enumerate(market_data.items()):
-        with cols[i % len(cols)]:
+    num_columns = 3
+    cols = st.columns(num_columns)
+    market_items = list(market_data.items())
+
+    for i, (name, data) in enumerate(market_items):
+        with cols[i % num_columns]:
             create_metric_card(
                 name,
-                data["value"],
-                data["change"],
-                data["type"],
-                "📈" if data["type"] == "positive" else "📉"
+                data.get("value", "N/A"),
+                data.get("change", ""),
+                data.get("type", "neutral"),
+                "📈" if data.get("type") == "positive" else "📉"
             )
 
 def create_quick_stock_analysis():
