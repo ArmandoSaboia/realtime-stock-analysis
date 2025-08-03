@@ -102,15 +102,10 @@
 
 /* Global Styles */
 .main .block-container {
-    padding-top: 0rem; /* Adjusted */
-    padding-bottom: 0rem; /* Adjusted */
+    padding-top: 1rem;
+    padding-bottom: 2rem;
     max-width: 1200px;
-    height: 100vh; /* Added */
-    display: flex; /* Added */
-    flex-direction: column; /* Added */
-    justify-content: center; /* Added */
-    align-items: center; /* Added */
-    overflow: hidden; /* Added */
+    /* Removed: height, display, flex-direction, justify-content, align-items, overflow */
 }
 
 /* Custom Font */
@@ -302,4 +297,53 @@ header { visibility: hidden; }
 
 ::-webkit-scrollbar-thumb:hover {
     background: #5a67d8;
+}
+
+/* Media Queries for Responsiveness */
+@media (max-width: 768px) {
+    /* Adjust general padding for smaller screens */
+    .main .block-container {
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+        padding-top: 0.5rem !important;
+        padding-bottom: 0.5rem !important;
+    }
+
+    /* Make metric cards more compact */
+    .metric-card {
+        padding: 0.8rem; /* Reduce padding */
+        margin: 0.2rem; /* Reduce margin */
+    }
+
+    .metric-value {
+        font-size: 1.6rem; /* Smaller font for values */
+    }
+
+    .metric-title {
+        font-size: 0.8rem;
+    }
+
+    .metric-change {
+        font-size: 0.8rem;
+        padding: 0.15rem 0.3rem;
+    }
+
+    /* Adjust header padding and font sizes */
+    .main-header {
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .main-header h1 {
+        font-size: 1.8rem;
+    }
+
+    .main-header p {
+        font-size: 0.9rem;
+    }
+
+    /* Adjust quick stock analysis elements */
+    .stTextInput, .stSelectbox {
+        margin-bottom: 0.5rem;
+    }
 }
