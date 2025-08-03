@@ -759,7 +759,7 @@ def create_quick_stock_analysis():
                 fig.update_layout(
                     title=f"{stock_symbol} - {timeframe} Analysis",
                     xaxis_title="Date",
-                    yaxis_title="Price ($")",
+                    yaxis_title="Price ($)",
                     template="plotly_white",
                     height=400,
                     showlegend=True,
