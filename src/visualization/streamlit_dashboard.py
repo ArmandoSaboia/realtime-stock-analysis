@@ -744,7 +744,7 @@ def generate_pdf_report():
     pdf.set_font("Arial", size=12)
     pdf.cell(200, 10, txt="Portfolio Report", ln=True, align='C')
     pdf.cell(200, 10, txt="This is a placeholder for your portfolio report.", ln=True, align='C')
-    return pdf.output(dest='S').encode('latin-1')
+    return pdf.output(dest='S')
 
 # -- Enhanced Sidebar --
 def create_enhanced_sidebar():
