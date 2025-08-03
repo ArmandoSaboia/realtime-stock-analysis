@@ -250,7 +250,8 @@ def create_dashboard_header():
     """, unsafe_allow_html=True)
 
 @st.cache_data(ttl=900)  # Cache for 15 minutes
-def fetch_market_data(td_client):
+def fetch_market_data():
+    td_client = st.session_state.get('td_client')
     if not td_client:
         return None
     
@@ -323,7 +324,7 @@ def create_market_overview():
             "Ethereum": {"value": "Loading...", "change": "", "type": "neutral"}
         }
     else:
-        market_data = fetch_market_data(td_client_instance)
+        market_data = fetch_market_data()
 
     if not market_data:
         st.info("Market data is currently unavailable.")
