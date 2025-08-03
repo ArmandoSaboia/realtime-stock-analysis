@@ -816,7 +816,7 @@ def main():
     st.markdown("---")
     st.markdown(""" 
     <div style="text-align: center; color: #687280; font-size: 0.9rem;"> 
-        <strong>Real-Time Market Overview & Analytics</strong> | Built with Python, Streamlit, Plotly & Groq |
+        <strong>Real-Time Market Overview & Analytics</strong> | Built with Python, Streamlit, Plotly, YFinance & GroqCloud |
         © 2025 Armando Saboia
     </div>
     """, unsafe_allow_html=True)
