@@ -612,51 +612,47 @@ def fetch_market_data(td_client):
         return None
     
     symbols = {
-        "S&P 500": "SPX",
+        "S&P 500": "GSPC",
         "NASDAQ": "IXIC",
         "DOW": "DJI",
-        "VIX": "VIX",
+        "VIX": "^VIX",
         "Gold": "XAU/USD",
         "Silver": "XAG/USD",
-        "Oil": "CL/USD",
+        "Oil": "USO",
         "Bitcoin": "BTC/USD",
         "Ethereum": "ETH/USD"
     }
     
     market_data = {}
-    try:
-        for name, symbol in symbols.items():
-            try:
-                st.write(f"DEBUG: Fetching {name} ({symbol})")
-                quote = td_client.quote(symbol=symbol).as_json()
-                st.write(f"DEBUG: API response for {name}: {quote}")
-                if quote and 'close' in quote and 'change' in quote and 'percent_change' in quote:
-                    value = float(quote['close'])
-                    change = float(quote['percent_change'])
-                    
-                    change_type = "positive" if change >= 0 else "negative"
-                    if name == "VIX":
-                        change_type = "negative" if change >= 0 else "positive"
+    for name, symbol in symbols.items():
+        try:
+            st.write(f"DEBUG: Fetching {name} ({symbol})")
+            quote = td_client.quote(symbol=symbol).as_json()
+            st.write(f"DEBUG: API response for {name}: {quote}")
+            if quote and 'close' in quote and 'change' in quote and 'percent_change' in quote:
+                value = float(quote['close'])
+                change = float(quote['percent_change'])
+                
+                change_type = "positive" if change >= 0 else "negative"
+                if name == "VIX":
+                    change_type = "negative" if change >= 0 else "positive"
 
-                    formatted_value = f"${value:,.2f}" if name not in ["S&P 500", "NASDAQ", "DOW", "VIX"] else f"{value:,.2f}"
-                    formatted_change = f"{change:+.2f}%"
-                    
-                    market_data[name] = {
-                        "value": formatted_value,
-                        "change": formatted_change,
-                        "type": change_type
-                    }
-                else:
-                    st.write(f"DEBUG: Invalid data for {name}: {quote}")
-                    market_data[name] = {"value": "N/A", "change": "N/A", "type": "neutral"}
-            except Exception as e:
-                st.error(f"Error fetching data for {name}: {e}")
-                st.write(f"DEBUG: Exception for {name}: {e}")
-                market_data[name] = {"value": "Error", "change": "", "type": "negative"}
-    except Exception as e:
-        st.error(f"An unexpected error occurred while fetching market data: {e}")
-        st.write(f"DEBUG: Global exception in fetch_market_data: {e}")
-        return None
+                formatted_value = f"${value:,.2f}" if name not in ["S&P 500", "NASDAQ", "DOW", "VIX"] else f"{value:,.2f}"
+                formatted_change = f"{change:+.2f}%"
+                
+                market_data[name] = {
+                    "value": formatted_value,
+                    "change": formatted_change,
+                    "type": change_type
+                }
+            else:
+                st.write(f"DEBUG: Invalid data for {name}: {quote}")
+                market_data[name] = {"value": "N/A", "change": "N/A", "type": "neutral"}
+        except Exception as e:
+            st.error(f"Error fetching data for {name}: {e}")
+            st.write(f"DEBUG: Exception for {name}: {e}")
+            market_data[name] = {"value": "Error", "change": "", "type": "negative"}
+        time.sleep(1) # Add a 1-second delay to avoid rate limiting
         
     st.write(f"DEBUG: Final market_data: {market_data}")
     return market_data
