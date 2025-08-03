@@ -255,15 +255,14 @@ def fetch_market_data():
     if not td_client:
         return None
     
-    # Using a mix of ETFs and direct symbols available on the free plan
     symbols = {
-        "S&P 500": "SPY",
-        "NASDAQ": "QQQ",
-        "DOW": "DIA",
-        "VIX": "VXX",
+        "S&P 500": "SPX",
+        "NASDAQ": "IXIC",
+        "DOW": "DJI",
+        "VIX": "VIX",
         "Gold": "XAU/USD",
         "Silver": "XAG/USD",
-        "Oil": "USO",
+        "Oil": "WTI",
         "Bitcoin": "BTC/USD",
         "Ethereum": "ETH/USD"
     }
