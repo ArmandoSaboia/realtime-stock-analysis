@@ -575,7 +575,7 @@ def create_technical_analysis_chart(data, ticker, indicators=None):
         showlegend=True
     )
     
-    fig.update_yaxes(title_text="Price ($")", row=1, col=1)
+    fig.update_yaxes(title_text="Price ($)", row=1, col=1)
     fig.update_yaxes(title_text="RSI", row=2, col=1)
     fig.update_yaxes(title_text="MACD", row=3, col=1)
     fig.update_yaxes(title_text="Stochastic", row=4, col=1)
