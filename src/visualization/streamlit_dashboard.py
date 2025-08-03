@@ -736,6 +736,16 @@ def handle_technical_analysis(td_client_instance):
                 except Exception as e:
                     st.error(f"Failed to generate technical analysis: {e}")
 
+from fpdf import FPDF
+
+def generate_pdf_report():
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, txt="Portfolio Report", ln=True, align='C')
+    pdf.cell(200, 10, txt="This is a placeholder for your portfolio report.", ln=True, align='C')
+    return pdf.output(dest='S').encode('latin-1')
+
 # -- Enhanced Sidebar --
 def create_enhanced_sidebar():
     st.sidebar.markdown("#### Settings")
@@ -768,10 +778,20 @@ def create_enhanced_sidebar():
     st.sidebar.markdown("#### Quick Actions")
     if st.sidebar.button("Refresh Data"):
         st.rerun()
-    if st.sidebar.button("Export Portfolio"):
-        st.sidebar.success("Portfolio exported!")
-    if st.sidebar.button("Generate Report"):
-        st.sidebar.success("Report generated!")
+
+    pdf_report = generate_pdf_report()
+    st.sidebar.download_button(
+        label="Export Portfolio",
+        data=pdf_report,
+        file_name="portfolio_report.pdf",
+        mime="application/pdf"
+    )
+    st.sidebar.download_button(
+        label="Generate Report",
+        data=pdf_report,
+        file_name="generated_report.pdf",
+        mime="application/pdf"
+    )
 
 # -- Main App Function --
 def main():

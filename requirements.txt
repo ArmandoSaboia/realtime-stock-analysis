@@ -64,3 +64,5 @@ scikit-learn
 mplfinance
 statsmodels
 yfinance
+
+fpdf2
