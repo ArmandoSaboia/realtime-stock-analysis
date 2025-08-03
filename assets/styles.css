@@ -102,9 +102,15 @@
 
 /* Global Styles */
 .main .block-container {
-    padding-top: 1rem;
-    padding-bottom: 2rem;
+    padding-top: 0rem; /* Adjusted */
+    padding-bottom: 0rem; /* Adjusted */
     max-width: 1200px;
+    height: 100vh; /* Added */
+    display: flex; /* Added */
+    flex-direction: column; /* Added */
+    justify-content: center; /* Added */
+    align-items: center; /* Added */
+    overflow: hidden; /* Added */
 }
 
 /* Custom Font */
