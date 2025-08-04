@@ -309,9 +309,10 @@ def create_market_overview():
 
     num_columns = 3
     cols = st.columns(num_columns)
-    market_items = list(market_data.items())
+    # Display only the first 6 items to keep the overview concise
+    market_items_to_display = list(market_data.items())[:6]
 
-    for i, (name, data) in enumerate(market_items):
+    for i, (name, data) in enumerate(market_items_to_display):
         with cols[i % num_columns]:
             create_metric_card(
                 name,
